@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Prevent horizontal page shift/tearing (e.g. when a vertical scrollbar
+   appears during processing). Safe for sticky headers — applied to body. */
+html, body { overflow-x: hidden; max-width: 100%; }
+
+@keyframes indeterminate {
+  0%   { transform: translateX(-100%); }
+  60%  { transform: translateX(250%); }
+  100% { transform: translateX(250%); }
+}

@@ -4,7 +4,7 @@
 
 `React` `Whisper AI` `Ollama` `WebLLM` `Three.js` `Vanta` `Vite` `License: MIT`
 
-> Turn any screen recording into polished, step-by-step documentation — entirely in your browser. No server. No uploads. No subscription. Ever.
+> Turn any screen recording into polished, step-by-step documentation, entirely in your browser. No server. No uploads. No subscription. Ever.
 
 ---
 
@@ -12,18 +12,18 @@
 
 1. [What Is This?](#-what-is-this)
 2. [Live Demo](#-live-demo)
-3. [How It Works — The Full Pipeline](#-how-it-works--the-full-pipeline)
+3. [How It Works: The Full Pipeline](#-how-it-works-the-full-pipeline)
 4. [Module Breakdown](#-module-breakdown)
-   - [Module 1 — Frame Extraction](#module-1--frame-extraction)
-   - [Module 2 — Audio Extraction](#module-2--audio-extraction)
-   - [Module 3 — Whisper AI Transcription](#module-3--whisper-ai-transcription)
-   - [Module 4 — AI Annotation (Ollama / WebLLM)](#module-4--ai-annotation-ollama--webllm)
-   - [Module 5 — Export Engine](#module-5--export-engine)
+   - [Module 1: Frame Extraction](#module-1-frame-extraction)
+   - [Module 2: Audio Extraction](#module-2-audio-extraction)
+   - [Module 3: Whisper AI Transcription](#module-3-whisper-ai-transcription)
+   - [Module 4: AI Annotation (Ollama / WebLLM)](#module-4-ai-annotation-ollama--webllm)
+   - [Module 5: Export Engine](#module-5-export-engine)
 5. [Repository Structure](#-repository-structure)
 6. [Tech Stack](#-tech-stack)
 7. [Getting Started](#-getting-started)
 8. [Deploying to Netlify](#-deploying-to-netlify)
-9. [Privacy — Where Does Your Data Go?](#-privacy--where-does-your-data-go)
+9. [Privacy: Where Does Your Data Go?](#-privacy-where-does-your-data-go)
 10. [Customisation](#-customisation)
 11. [License Notes](#-license-notes)
 12. [Author](#-author)
@@ -33,7 +33,7 @@
 
 ## 📖 What Is This?
 
-Imagine you just finished recording a 10-minute tutorial — a code walkthrough, a product demo, an onboarding video, a design process, anything.
+Imagine you just finished recording a 10-minute tutorial: a code walkthrough, a product demo, an onboarding video, a design process, anything.
 Now someone says: *"Can you write this up as a step-by-step guide?"*
 
 You sigh. You open a doc. You rewatch the video. You pause. You type. You pause again.
@@ -41,7 +41,7 @@ Two hours later you have a half-finished document you never want to look at agai
 
 **VideoDoc eliminates that entirely.**
 
-Upload the video. Click annotate. Get a polished, structured, beautifully formatted document — with screenshots, numbered steps, and AI-written annotations — in minutes.
+Upload the video. Click annotate. Get a polished, structured, beautifully formatted document, with screenshots, numbered steps, and AI-written annotations, in minutes.
 
 It works for:
 
@@ -56,14 +56,14 @@ And the best part? **Everything runs in your browser.** No API keys. No cloud. N
 
 ## 🌐 Live Demo
 
-👉 **[video-doc.netlify.app](https://video-doc.netlify.app)**
+👉 **[videodoc.netlify.app](https://videodoc.netlify.app)**
 
-* `/` — Landing page
-* `/#/app` — The VideoDoc application
+* `/` is the landing page
+* `/#/app` is the VideoDoc application
 
 ---
 
-## 🔄 How It Works — The Full Pipeline
+## 🔄 How It Works: The Full Pipeline
 
 ```
 ┌─────────────┐     ┌─────────────────────┐     ┌──────────────────────┐
@@ -96,7 +96,7 @@ And the best part? **Everything runs in your browser.** No API keys. No cloud. N
 
 ## 🧩 Module Breakdown
 
-### Module 1 — Frame Extraction
+### Module 1: Frame Extraction
 
 VideoDoc uses the **HTML5 Canvas API** and a hidden `<video>` element to pull frames directly in the browser. No server. No ffmpeg. No temp files.
 
@@ -118,7 +118,7 @@ These frames are later embedded into the exported HTML guide as animated slidesh
 
 ---
 
-### Module 2 — Audio Extraction
+### Module 2: Audio Extraction
 
 The audio track is ripped using the **Web Audio API** and **OfflineAudioContext**, then resampled to exactly what Whisper expects.
 
@@ -140,7 +140,7 @@ const resampled = await audioContext.startRendering()
 
 ---
 
-### Module 3 — Whisper AI Transcription
+### Module 3: Whisper AI Transcription
 
 This is where the magic starts. VideoDoc runs **OpenAI's Whisper model** entirely inside your browser using ONNX Runtime Web, powered by `@huggingface/transformers`.
 
@@ -165,13 +165,13 @@ Transcribing       ██████████  100%  → 24 segments found
 
 ---
 
-### Module 4 — AI Annotation (Ollama / WebLLM)
+### Module 4: AI Annotation (Ollama / WebLLM)
 
 Once transcription is done, VideoDoc sends each segment to a **local LLM** for annotation. The LLM writes structured step-by-step documentation for each segment.
 
 VideoDoc **auto-detects** which AI to use:
 
-#### 🟢 Path A — Ollama (Recommended)
+#### 🟢 Path A: Ollama (Recommended)
 
 If Ollama is running on `localhost:11434`, VideoDoc automatically fetches your installed models and lets you pick one.
 
@@ -201,7 +201,7 @@ Write STEPS: 1. ... 2. ... and RESULT: ...
 
 Context-aware: the LLM knows what came before and after each segment, so annotations flow naturally as a document.
 
-#### 🟣 Path B — WebLLM (Fallback)
+#### 🟣 Path B: WebLLM (Fallback)
 
 No Ollama? No problem. VideoDoc loads **Llama-3.2-1B-Instruct** directly into your browser via WebGPU using `@mlc-ai/web-llm`.
 
@@ -222,7 +222,7 @@ Model cached in browser after first load
 
 ---
 
-### Module 5 — Export Engine
+### Module 5: Export Engine
 
 Three export formats, all generated client-side with zero server involvement.
 
@@ -240,7 +240,7 @@ The crown jewel. A self-contained HTML file with:
 * Fully printable
 
 ```js
-// Dynamic import — only loaded when user clicks Export
+// Dynamic import, only loaded when user clicks Export
 const { exportHTML } = await import('./lib/exportHTML.js')
 exportHTML(annotatedDocs, frames, videoName)
 ```
@@ -268,7 +268,8 @@ video-docs/
 ├── public/
 │   ├── _redirects                ← Netlify SPA fallback
 │   ├── three.min.js              ← Three.js r134 (same-origin, bypasses COEP)
-│   └── vanta.halo.min.js         ← Vanta HALO effect (same-origin)
+│   ├── vanta.halo.min.js         ← Vanta HALO effect (app background)
+│   └── vanta.net.min.js          ← Vanta NET effect (landing background)
 │
 └── src/
     ├── main.jsx                  ← HashRouter → / (landing) and /app (app)
@@ -276,13 +277,16 @@ video-docs/
     ├── index.css                 ← Indeterminate progress animation
     │
     ├── components/
-    │   ├── LandingPage.jsx       ← Full sci-fi landing page (Vanta NET)
+    │   ├── LandingPage.jsx       ← Full landing page (Vanta NET)
     │   ├── Uploader.jsx          ← 3 drop cards: video / code / reference doc
     │   ├── VideoPlayer.jsx       ← Seekable video preview
     │   ├── FrameStrip.jsx        ← Horizontal frame timeline
     │   ├── DocPreview.jsx        ← Live transcript + annotation viewer
     │   ├── ExportBar.jsx         ← HTML / PDF / DOCX export buttons
     │   ├── AISettings.jsx        ← Ollama model picker + section config
+    │   ├── ProductDemo.jsx       ← Animated landing-page product demo
+    │   ├── BeforeAfter.jsx       ← Before/after comparison slider
+    │   ├── VideoDocLogo.jsx      ← Custom SVG logo
     │   └── PipelineStatus.jsx    ← Live step tracker (elapsed, %, ETA)
     │
     ├── hooks/
@@ -330,7 +334,7 @@ video-docs/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/video-docs.git
+git clone https://github.com/Aryan-Bajaj/video-docs.git
 cd video-docs
 ```
 
@@ -377,14 +381,14 @@ If Ollama is not running, VideoDoc falls back to WebLLM (Llama 3.2 1B in-browser
 
 ## ☁️ Deploying to Netlify
 
-### Option A — Drag and Drop (No Git required)
+### Option A: Drag and Drop (No Git required)
 
 ```bash
 npm run build
 # Drag the dist/ folder to https://app.netlify.com/drop
 ```
 
-### Option B — Connect GitHub Repo
+### Option B: Connect GitHub Repo
 
 1. Push this repo to GitHub
 2. Connect it to Netlify
@@ -395,7 +399,7 @@ npm run build
 
 ---
 
-## 🔒 Privacy — Where Does Your Data Go?
+## 🔒 Privacy: Where Does Your Data Go?
 
 | Data | Where it goes |
 |---|---|
@@ -428,7 +432,7 @@ Edit `src/lib/exportHTML.js`. All styles are inline in the generated HTML string
 Edit `src/hooks/useVantaHalo.js`. Adjust `baseColor`, `size`, `speed`, `amplitudeFactor`.
 
 **Change Vanta NET settings (landing page background)**
-In `src/components/LandingPage.jsx`, find the `NET({...})` call and adjust `color`, `points`, `maxDistance`, `spacing`.
+In `src/components/LandingPage.jsx`, find the `window.VANTA.NET({...})` call and adjust `color`, `points`, `maxDistance`, `spacing`.
 
 ---
 
@@ -455,10 +459,10 @@ VideoDoc is a browser-based productivity tool. Transcription accuracy depends on
 
 ## 👤 Author
 
-**Aryan Bajaj** — [GitHub](https://github.com/Aryan-Bajaj)
+**Aryan Bajaj** · [GitHub](https://github.com/Aryan-Bajaj)
 
 ---
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.

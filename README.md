@@ -64,6 +64,19 @@ P.S. — This is Version 1. I’m currently working on Version 2 to improve the 
 
 ---
 
+## ✨ New in v2
+
+Everything below runs client-side. No server, no API keys.
+
+* **Reads your screen (OCR).** Tesseract reads the on-screen text off the frames, so steps name the exact buttons, menus and files, and the tools you used (Excel, VBA, SAP, VS Code, Python and more) are detected automatically and listed in the guide.
+* **Animated step GIFs.** Each step becomes a smooth GIF of the real action: a clip from 3 seconds before to 3 seconds after the keyframe, encoded in the browser with `gifenc` and embedded into the HTML guide. Optimised with downscaling, low frame rate and a shared palette.
+* **Talk to your documentation (RAG).** After a guide is built you can ask it questions. Embeddings run in the browser (MiniLM via `transformers.js`), the closest steps are retrieved, and the local LLM answers, showing the matching frame and a jump-to-moment link.
+* **Handles long videos (chunking).** The transcript is grouped into time windows, so a long recording is summarised in a handful of focused passes instead of hundreds of tiny calls. Frame extraction auto-caps and downscales to stay within browser memory.
+* **You name the guide.** The document title is asked up front, so the heading is never the raw video file name.
+* **Browser-first by default.** WebLLM runs Llama 3.2 3B (falls back to 1B) so anyone can use it with zero install. Ollama stays available as an opt-in upgrade for stronger local models.
+
+---
+
 ## 🔄 How It Works: The Full Pipeline
 
 ```
@@ -316,9 +329,11 @@ video-docs/
 |---|---|
 | **React 18 + Vite 6** | Frontend framework + build tool |
 | **Tailwind CSS v4** | Utility-first styling |
-| **@huggingface/transformers v4** | Whisper AI, runs in browser via ONNX |
-| **@mlc-ai/web-llm** | WebLLM, Llama 3.2 via WebGPU |
-| **Ollama** | Local LLM server (user-installed) |
+| **@huggingface/transformers v4** | Whisper transcription + MiniLM embeddings (RAG), in browser via ONNX |
+| **@mlc-ai/web-llm** | WebLLM, Llama 3.2 3B/1B via WebGPU |
+| **Ollama** | Local LLM server (optional, user-installed) |
+| **tesseract.js** | In-browser OCR (on-screen text + tool detection) |
+| **gifenc** | In-browser GIF encoding for animated step clips |
 | **Three.js r134** | 3D rendering engine for Vanta |
 | **Vanta.js** | Animated backgrounds (NET + HALO) |
 | **jsPDF** | Client-side PDF generation |

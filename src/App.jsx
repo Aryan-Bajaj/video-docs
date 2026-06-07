@@ -5,18 +5,21 @@ import DocPreview from "./components/DocPreview"
 import ExportBar from "./components/ExportBar"
 import FrameStrip from "./components/FrameStrip"
 import AISettings from "./components/AISettings"
+import DocChat from "./components/DocChat"
 import PipelineStatus from "./components/PipelineStatus"
 import useFrameExtractor from "./hooks/useFrameExtractor"
 import useAudioExtractor from "./hooks/useAudioExtractor"
 import useTranscriber from "./hooks/useTranscriber"
 import useAnnotator from "./hooks/useAnnotator"
 import useDocParser from "./hooks/useDocParser"
+import useOCR from "./hooks/useOCR"
 import useVantaHalo from "./hooks/useVantaHalo"
 
 const INITIAL_STEPS = [
   { id: 'frames',     label: 'Extract Frames',   status: 'pending', detail: null },
   { id: 'audio',      label: 'Extract Audio',     status: 'pending', detail: null },
   { id: 'transcribe', label: 'Transcribe Audio',  status: 'pending', detail: null, pct: null },
+  { id: 'ocr',        label: 'Read Screen (OCR)', status: 'pending', detail: null, pct: null, step: null, total: null },
   { id: 'annotate',   label: 'Annotate Segments', status: 'pending', detail: null, pct: null, step: null, total: null, etaMs: null },
 ]
 
@@ -30,6 +33,11 @@ export default function App() {
   const [showAISettings, setShowAISettings] = useState(false)
   const [pipelineSteps, setPipelineSteps] = useState(null)
   const [error, setError] = useState(null)
+  const [ocrFrameTexts, setOcrFrameTexts] = useState([])
+  const [toolsUsed, setToolsUsed] = useState([])
+  const [docTitle, setDocTitle] = useState("")
+  const [aiMode, setAiMode] = useState(null)
+  const [aiModel, setAiModel] = useState(null)
 
   const annotateStartRef = useRef(null)
 
@@ -37,6 +45,7 @@ export default function App() {
   const { extractAudio } = useAudioExtractor()
   const { transcribe, transcribeProgress } = useTranscriber()
   const { annotate } = useAnnotator()
+  const { runOCR } = useOCR()
   const { parseDoc, sections: docSections, parsing: docParsing } = useDocParser()
 
   const updateStep = useCallback((id, updates) => {
@@ -64,6 +73,9 @@ export default function App() {
     setAnnotatedDocs([])
     setTranscriptChunks([])
     setFrames([])
+    setOcrFrameTexts([])
+    setToolsUsed([])
+    setDocTitle("")
     setVideoFile(file)
     setPipelineSteps(INITIAL_STEPS.map((s, i) =>
       i === 0 ? { ...s, status: 'active', startedAt: Date.now() } : s
@@ -84,6 +96,15 @@ export default function App() {
       setTranscriptChunks(chunks)
       updateStep('transcribe', { status: 'done', detail: `${chunks.length} segments found`, endedAt: Date.now() })
 
+      // OCR: read on-screen text from frames → captures exact UI labels + detects tools used
+      updateStep('ocr', { status: 'active', detail: 'Reading on-screen text...', startedAt: Date.now() })
+      const transcriptText = chunks.map(c => c.text).join(' ')
+      const { frameTexts, tools } = await runOCR(extracted, transcriptText,
+        (i, total) => updateStep('ocr', { step: i + 1, total }))
+      setOcrFrameTexts(frameTexts)
+      setToolsUsed(tools)
+      updateStep('ocr', { status: 'done', detail: tools.length ? `Tools: ${tools.join(', ')}` : `${frameTexts.length} frames read`, endedAt: Date.now() })
+
       if (chunks.length > 0) setShowAISettings(true)
     } catch (e) {
       setPipelineSteps(prev =>
@@ -95,9 +116,12 @@ export default function App() {
     }
   }
 
-  const handleStartAnnotation = async (aiMode, sections, ollamaModel) => {
+  const handleStartAnnotation = async (aiMode, sections, ollamaModel, title) => {
     setShowAISettings(false)
     setError(null)
+    if (title) setDocTitle(title)
+    setAiMode(aiMode)
+    setAiModel(ollamaModel)
     const startedAt = Date.now()
     annotateStartRef.current = startedAt
     const modelLabel = aiMode === 'ollama' ? (ollamaModel || 'ollama') : 'WebLLM'
@@ -123,7 +147,8 @@ export default function App() {
         },
         (msg) => updateStep('annotate', { detail: msg }),
         sections,
-        ollamaModel
+        ollamaModel,
+        ocrFrameTexts
       )
       setAnnotatedDocs(docs)
       updateStep('annotate', { status: 'done', detail: `${docs.length} entries annotated`, endedAt: Date.now() })
@@ -163,6 +188,7 @@ export default function App() {
           onConfirm={handleStartAnnotation}
           onClose={() => setShowAISettings(false)}
           suggestedSections={docSections}
+          toolsUsed={toolsUsed}
         />
       )}
 
@@ -231,8 +257,20 @@ export default function App() {
               annotatedDocs={annotatedDocs}
               transcriptChunks={transcriptChunks}
               videoName={videoFile.name}
+              videoFile={videoFile}
+              docTitle={docTitle}
+              toolsUsed={toolsUsed}
               frames={frames}
             />
+
+            {annotatedDocs.length > 0 && (
+              <DocChat
+                docs={annotatedDocs}
+                aiMode={aiMode}
+                ollamaModel={aiModel}
+                onSeek={handleDocSeek}
+              />
+            )}
           </>
         )}
       </main>

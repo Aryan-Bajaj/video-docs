@@ -2,6 +2,7 @@ import { useState } from "react"
 import { exportHTML } from "../lib/exportHTML"
 import { exportPDF } from "../lib/exportPDF"
 import { exportDOCX } from "../lib/exportDOCX"
+import useGifMaker from "../hooks/useGifMaker"
 import { Download } from "lucide-react"
 
 function toExportDocs(annotatedDocs, transcriptChunks) {
@@ -14,11 +15,15 @@ function toExportDocs(annotatedDocs, transcriptChunks) {
   })
 }
 
-export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, frames }) {
+export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, videoFile, docTitle, toolsUsed, frames }) {
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState(null)
+  const [gifMsg, setGifMsg] = useState(null)
+  const { makeGifs } = useGifMaker()
 
   const hasContent = (annotatedDocs?.length ?? 0) + (transcriptChunks?.length ?? 0) > 0
+  // Title for the guide: user-provided title preferred; never the raw video file name.
+  const title = (docTitle && docTitle.trim()) || "Step-by-Step Guide"
   const name = videoName || "video"
 
   const handle = async (type) => {
@@ -27,13 +32,23 @@ export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, 
     setError(null)
     try {
       const docs = toExportDocs(annotatedDocs, transcriptChunks)
-      if (type === "html") exportHTML(docs, name, frames)
-      if (type === "pdf") await exportPDF(docs, name)
-      if (type === "docx") await exportDOCX(docs, name)
+      const meta = { title, tools: toolsUsed || [] }
+      if (type === "html") {
+        // Build a smooth animated GIF per step (±3s clip) — browser-only, no server.
+        let gifs = new Map()
+        if (videoFile && docs.length) {
+          gifs = await makeGifs(videoFile, docs, (i, t) => setGifMsg(`Building step GIFs ${i}/${t}…`))
+          setGifMsg(null)
+        }
+        exportHTML(docs, name, frames, { ...meta, gifs })
+      }
+      if (type === "pdf") await exportPDF(docs, name, meta)
+      if (type === "docx") await exportDOCX(docs, name, meta)
     } catch (e) {
       setError(`${type.toUpperCase()} export failed: ${e.message}`)
     } finally {
       setBusy(null)
+      setGifMsg(null)
     }
   }
 
@@ -43,6 +58,7 @@ export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, 
       {!hasContent && (
         <span className="text-xs text-zinc-600">Process a video to enable export</span>
       )}
+      {gifMsg && <span className="text-xs text-emerald-400 mr-auto">{gifMsg}</span>}
       {error && <span className="text-xs text-red-400 mr-auto">{error}</span>}
       <div className="ml-auto flex gap-2">
         {["html", "pdf", "docx"].map(type => (

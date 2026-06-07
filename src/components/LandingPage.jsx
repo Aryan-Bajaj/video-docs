@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import VideoDocLogo from './VideoDocLogo'
 import ProductDemo from './ProductDemo'
 import BeforeAfter from './BeforeAfter'
+import DocChatDemo from './DocChatDemo'
 
 // Primary: #3f62ff (electric blue)  Secondary: #a78bfa (violet)
 // Accent:  #06b6d4 (cyan)           Warm:      #fbbf24 (amber)
@@ -84,6 +85,8 @@ const CSS = `
     .lp-ghost      { padding: 14px 28px !important; font-size: 0.95rem !important; }
     .lp-fork-grid   { grid-template-columns: 1fr !important; }
     .lp-export-grid { grid-template-columns: 1fr !important; }
+    .lp-v-split     { grid-template-columns: 1fr !important; }
+    .lp-v-split > div:last-child { display: none !important; }
   }
 `
 
@@ -126,21 +129,33 @@ const FEATURES = [
     color: '#3f62ff',
   },
   {
-    icon: '🤖',
-    title: 'Your AI, Your Rules',
-    desc: 'Plug in any Ollama model (Llama 3, Mistral, Gemma) or run WebLLM in-browser. Zero data leaves your machine. Ever.',
+    icon: '👁',
+    title: 'Reads Your Screen (OCR)',
+    desc: 'On-screen text is read straight off the frames, so steps name the exact buttons, menus and files, and the tools you used (Excel, VBA, SAP…) are detected automatically.',
+    color: '#22d3ee',
+  },
+  {
+    icon: '🎞',
+    title: 'Animated Step GIFs',
+    desc: 'Every step becomes a smooth ±3-second GIF of the actual action, not a frozen screenshot. Built in your browser, embedded right into the HTML guide.',
+    color: '#f472b6',
+  },
+  {
+    icon: '💬',
+    title: 'Talk to Your Documentation',
+    desc: 'Ask your guide anything. In-browser RAG retrieves the right step and answers, with the matching frame and a jump-to-moment link. No server, no keys.',
+    color: '#34d399',
+  },
+  {
+    icon: '🧩',
+    title: 'Handles Long Videos',
+    desc: 'Smart chunking groups the transcript into windows, so a long recording is summarised in a handful of focused passes instead of hundreds.',
     color: '#a78bfa',
   },
   {
-    icon: '📸',
-    title: 'Visual Context, Automatically',
-    desc: 'Captures a frame every few seconds and syncs it to the matching transcript segment, so your docs show exactly what was on screen.',
-    color: '#06b6d4',
-  },
-  {
-    icon: '📄',
-    title: 'One Click to Publish-ready',
-    desc: 'Export a cinematic HTML guide, clean PDF, or DOCX. Formatted and ready for Notion, Confluence, or your own site.',
+    icon: '🔒',
+    title: 'Runs Fully in Your Browser',
+    desc: 'Whisper, OCR, the LLM, embeddings and GIFs, all client-side. Optional Ollama for power users; zero data leaves your machine. Ever.',
     color: '#fbbf24',
   },
 ]
@@ -425,7 +440,7 @@ export default function LandingPage() {
               fontStyle: 'italic',
               fontWeight: 300,
             }}>
-              "Documentation is the one thing everyone agrees must be done — and the first thing no one actually wants to do.
+              "Documentation is the one thing everyone agrees must be done, and the first thing no one actually wants to do.
               Training done. Process notes pending. Motivation missing.
               VideoDoc gets it done before you even think twice."
             </p>
@@ -451,7 +466,7 @@ export default function LandingPage() {
             textAlign: 'center', color: 'rgba(255,255,255,0.45)',
             fontSize: '1.05rem', marginBottom: 52,
           }}>
-            If you've ever recorded something and thought "I should write this up" —
+            If you've ever recorded something and thought "I should write this up",
             VideoDoc is for you.
           </p>
 
@@ -512,7 +527,7 @@ export default function LandingPage() {
             textAlign: 'center', color: 'rgba(255,255,255,0.45)',
             fontSize: '1.05rem', marginBottom: 56,
           }}>
-            A complete pipeline that runs in your browser — no installs, no cloud, no compromises on privacy.
+            A complete pipeline that runs in your browser, no installs, no cloud, no compromises on privacy.
           </p>
 
           <div style={{
@@ -547,6 +562,23 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* ── Talk to your documentation (RAG) ────────────────── */}
+        <section className="lp-section" style={{ padding: '90px 24px', maxWidth: 1000, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 44 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#34d399', marginBottom: 12 }}>
+              New · Retrieval-Augmented Chat
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3rem)', fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 14 }}>
+              Don't just read the doc.{' '}
+              <span style={{ background: 'linear-gradient(90deg, #34d399, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Ask it.</span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.05rem', maxWidth: 640, margin: '0 auto', lineHeight: 1.7 }}>
+              Once your guide is built, ask it anything. It finds the exact step, answers in plain language, and shows you the matching frame with a jump-to-moment link. Embeddings and retrieval run entirely in your browser, no server, no API keys.
+            </p>
+          </div>
+          <DocChatDemo />
         </section>
 
         {/* ── How it works ────────────────────────────────────── */}
@@ -702,7 +734,7 @@ export default function LandingPage() {
               letterSpacing: '0.12em', textTransform: 'uppercase',
               color: 'rgba(255,255,255,0.35)', paddingTop: 30, marginBottom: 16,
             }}>
-              AI Annotation — auto-detected
+              AI Annotation, auto-detected
             </div>
 
             <div className="lp-fork-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -781,7 +813,7 @@ export default function LandingPage() {
                 </div>
                 <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 16 }}>
                   Ollama not found? VideoDoc loads <code style={{ fontSize: 11, background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: 4 }}>Llama-3.2-1B</code> directly
-                  in your browser via WebGPU. Nothing to install — but needs a WebGPU-capable browser (Chrome 113+).
+                  in your browser via WebGPU. Nothing to install, but needs a WebGPU-capable browser (Chrome 113+).
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
@@ -819,7 +851,7 @@ export default function LandingPage() {
                 letterSpacing: '0.12em', textTransform: 'uppercase',
                 color: 'rgba(255,255,255,0.35)', marginBottom: 16,
               }}>
-                Export — pick your format
+                Export, pick your format
               </div>
               <div className="lp-export-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
                 {[
@@ -856,6 +888,58 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ── V1 → V2 comparison split ─────────────────────────── */}
+        <section className="lp-section" style={{ padding: '90px 24px', maxWidth: 1000, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 44 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fbbf24', marginBottom: 12 }}>
+              How far it's come
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3rem)', fontWeight: 700, letterSpacing: '-0.025em' }}>
+              <span style={{ color: 'rgba(255,255,255,0.4)' }}>v1</span>{' → '}
+              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>v2</span>
+            </h2>
+          </div>
+
+          <div className="lp-v-split" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, position: 'relative' }}>
+            {/* V1 */}
+            <div style={{ borderRadius: 18, padding: '28px 26px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 18 }}>v1 · the basics</div>
+              {[
+                'Transcribe + frame every few seconds',
+                'One LLM call per tiny segment',
+                '3 static screenshots per step',
+                'Title = video file name',
+                'Read the doc, that\'s it',
+                'Audio-only understanding',
+              ].map((t, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', fontSize: '0.92rem', color: 'rgba(255,255,255,0.5)' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>•</span>{t}
+                </div>
+              ))}
+            </div>
+
+            {/* V2 */}
+            <div style={{ borderRadius: 18, padding: '28px 26px', background: 'linear-gradient(160deg, rgba(63,98,255,0.1), rgba(34,211,238,0.05))', border: '1px solid rgba(63,98,255,0.3)', boxShadow: '0 0 40px rgba(63,98,255,0.12)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7b96ff', marginBottom: 18 }}>v2 · now</div>
+              {[
+                ['🧩', 'Smart chunking, long videos in a few passes'],
+                ['👁', 'OCR reads the screen, exact names + tools detected'],
+                ['🎞', 'Animated step GIFs (±3s of the real action)'],
+                ['✍️', 'You name the guide, never the file name'],
+                ['💬', 'Talk to your docs, RAG chat with frame answers'],
+                ['🧠', 'Bigger browser model (Llama 3.2 3B) by default'],
+              ].map(([ic, t], i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', fontSize: '0.92rem', color: 'rgba(255,255,255,0.85)' }}>
+                  <span style={{ flexShrink: 0 }}>{ic}</span>{t}
+                </div>
+              ))}
+            </div>
+
+            {/* center arrow */}
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 44, height: 44, borderRadius: '50%', background: '#0d0d2b', border: '1px solid rgba(63,98,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#7b96ff', boxShadow: '0 0 20px rgba(63,98,255,0.4)' }}>→</div>
           </div>
         </section>
 

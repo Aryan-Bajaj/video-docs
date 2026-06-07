@@ -1,6 +1,7 @@
-export async function exportDOCX(docs, videoName) {
+export async function exportDOCX(docs, videoName, meta = {}) {
   const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = await import("docx")
-  const title = videoName.replace(/\.[^.]+$/, "")
+  const title = (meta.title && meta.title.trim()) || "Step-by-Step Guide"
+  const tools = meta.tools || []
 
   const children = [
     new Paragraph({
@@ -15,9 +16,19 @@ export async function exportDOCX(docs, videoName) {
           size: 18,
         }),
       ],
-      spacing: { after: 400 },
+      spacing: { after: tools.length ? 120 : 400 },
     }),
   ]
+
+  if (tools.length) {
+    children.push(new Paragraph({
+      children: [
+        new TextRun({ text: "Tools used: ", bold: true, color: "107a6a", size: 18 }),
+        new TextRun({ text: tools.join(", "), color: "107a6a", size: 18 }),
+      ],
+      spacing: { after: 400 },
+    }))
+  }
 
   for (const doc of docs) {
     // Timestamp

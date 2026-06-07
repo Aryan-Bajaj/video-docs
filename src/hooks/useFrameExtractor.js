@@ -3,6 +3,12 @@ import { useRef, useCallback } from "react"
 export default function useFrameExtractor() {
   const canvasRef = useRef(document.createElement("canvas"))
 
+  // MAX_FRAMES caps how many base64 frames we hold in memory so long/large
+  // videos don't OOM the browser. The interval auto-stretches past `intervalSecs`
+  // for long videos; downscale keeps each frame small.
+  const MAX_FRAMES = 300
+  const MAX_W = 1280
+
   const extractFrames = useCallback((videoFile, intervalSecs = 5) => {
     return new Promise((resolve) => {
       const video = document.createElement("video")
@@ -14,11 +20,15 @@ export default function useFrameExtractor() {
       video.muted = true
 
       video.addEventListener("loadedmetadata", () => {
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
+        // adaptive interval: never produce more than MAX_FRAMES
+        const interval = Math.max(intervalSecs, video.duration / MAX_FRAMES)
+        // downscale wide videos so each base64 frame stays small
+        const scale = Math.min(1, MAX_W / video.videoWidth)
+        canvas.width = Math.round(video.videoWidth * scale)
+        canvas.height = Math.round(video.videoHeight * scale)
 
         const timestamps = []
-        for (let t = 0; t < video.duration; t += intervalSecs) {
+        for (let t = 0; t < video.duration; t += interval) {
           timestamps.push(parseFloat(t.toFixed(2)))
         }
 
@@ -26,6 +36,7 @@ export default function useFrameExtractor() {
 
         const captureNext = () => {
           if (index >= timestamps.length) {
+            URL.revokeObjectURL(video.src)
             resolve(frames)
             return
           }

@@ -6,7 +6,13 @@ export default function useAudioExtractor() {
 
     // Decode at native sample rate first
     const tempCtx = new AudioContext()
-    const decoded = await tempCtx.decodeAudioData(arrayBuffer)
+    let decoded
+    try {
+      decoded = await tempCtx.decodeAudioData(arrayBuffer)
+    } catch (e) {
+      await tempCtx.close()
+      throw new Error("Could not decode audio — the file may be too long or in an unsupported codec. Try a shorter clip.")
+    }
     await tempCtx.close()
 
     // Resample to 16kHz mono (Whisper requirement)

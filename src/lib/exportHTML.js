@@ -91,8 +91,10 @@ function captionFromTranscript(text) {
   return text.trim().slice(0, 65).replace(/\s+\S*$/, '') + (text.length > 65 ? '…' : '')
 }
 
-export function exportHTML(docs, videoName, allFrames) {
-  const title = videoName.replace(/\.[^.]+$/, '')
+export function exportHTML(docs, videoName, allFrames, meta = {}) {
+  // Prefer the user-given title; only fall back to a generic heading (never the video file name).
+  const title = (meta.title && meta.title.trim()) || 'Step-by-Step Guide'
+  const tools = meta.tools || []
   const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
   const annotated = docs.filter(d => d.annotation).length
   const total = docs.length
@@ -116,17 +118,23 @@ export function exportHTML(docs, videoName, allFrames) {
     </div>`
   }).join('\n')
 
+  const gifs = meta.gifs instanceof Map ? meta.gifs : new Map()
+
   // Segment entries — large side-by-side layout
   const segEntries = docs.map((doc, i) => {
     const clipFrames = getClipFrames(allFrames, doc.timestamp, 15)
     const annotBlock = buildAnnotationBlock(doc)
     const caption = captionFromTranscript(doc.text)
+    const gif = gifs.get(doc.timestamp)
 
-    const mediaHtml = clipFrames.length > 1
-      ? buildAnimatedMedia(clipFrames, i, caption)
-      : clipFrames.length === 1
-        ? buildStaticMedia(clipFrames[0], doc.label, caption)
-        : `<div class="seg-no-frame"><span>${esc(doc.label)}</span></div>`
+    // Prefer the smooth animated GIF (±3s clip); fall back to frame slideshow.
+    const mediaHtml = gif
+      ? `<figure class="seg-media"><img src="${gif}" alt="${esc(doc.label)}" style="width:100%;height:auto;display:block;max-height:420px;object-fit:contain;border-radius:8px">${caption ? `<figcaption class="seg-caption">${esc(caption)}</figcaption>` : ''}</figure>`
+      : clipFrames.length > 1
+        ? buildAnimatedMedia(clipFrames, i, caption)
+        : clipFrames.length === 1
+          ? buildStaticMedia(clipFrames[0], doc.label, caption)
+          : `<div class="seg-no-frame"><span>${esc(doc.label)}</span></div>`
 
     return `
     <div class="seg-entry reveal" style="transition-delay:0.05s">
@@ -289,6 +297,7 @@ footer span{color:var(--gold)}
       <div class="hero-tag">VideoDoc · AI-Generated Step-by-Step Documentation</div>
       <h1>${esc(title)}</h1>
       <p class="hero-desc">This document provides a step-by-step technical breakdown of every action performed in the recording. Each step documents exactly what was clicked or configured, the mechanism behind it, and the outcome — enabling any reader to understand or replicate the process without watching the video.</p>
+      ${tools.length ? `<div style="margin-top:18px"><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Tools used (detected on screen)</div><div style="display:flex;flex-wrap:wrap;gap:8px">${tools.map(t => `<span style="font-size:12px;font-weight:600;background:var(--teal-light);color:var(--teal-dark);padding:4px 12px;border-radius:20px">${esc(t)}</span>`).join('')}</div></div>` : ''}
     </div>
     <div class="hero-stats">
       <div class="stat">

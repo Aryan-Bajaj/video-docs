@@ -2,14 +2,15 @@ import { useState, useEffect } from "react"
 import { X, Globe, Cpu, Plus, FileText, ChevronDown } from "lucide-react"
 import { DEFAULT_SECTIONS } from "../hooks/useDocParser"
 
-export default function AISettings({ onConfirm, onClose, suggestedSections }) {
-  const [mode, setMode] = useState("ollama")
+export default function AISettings({ onConfirm, onClose, suggestedSections, toolsUsed = [] }) {
+  const [mode, setMode] = useState("webllm") // browser-first: works for everyone, no install
   const [ollamaStatus, setOllamaStatus] = useState("checking")
   const [ollamaModels, setOllamaModels] = useState([])
   const [selectedModel, setSelectedModel] = useState("")
   const [selected, setSelected] = useState([])
   const [customSections, setCustomSections] = useState([])
   const [customInput, setCustomInput] = useState("")
+  const [title, setTitle] = useState("")
 
   useEffect(() => {
     setSelected(suggestedSections?.length ? suggestedSections : [])
@@ -67,6 +68,27 @@ export default function AISettings({ onConfirm, onClose, suggestedSections }) {
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Document title */}
+        <div>
+          <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Document Title</p>
+          <input
+            type="text" value={title} onChange={e => setTitle(e.target.value)}
+            placeholder="e.g. How to set up the R3 → S4 mapping macro"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500"
+          />
+          <p className="text-xs text-zinc-600 mt-1.5">Used as the guide heading. Leave blank for an auto title (not the video file name).</p>
+          {toolsUsed.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
+              <span className="text-xs text-zinc-500">Detected tools:</span>
+              {toolsUsed.map(t => (
+                <span key={t} className="text-xs bg-blue-500/15 text-blue-300 px-2 py-0.5 rounded-full">{t}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-zinc-800" />
 
         {/* AI Backend */}
         <div>
@@ -203,7 +225,7 @@ export default function AISettings({ onConfirm, onClose, suggestedSections }) {
         </div>
 
         <button
-          onClick={() => onConfirm(mode, selected.length > 0 ? selected : null, selectedModel)}
+          onClick={() => onConfirm(mode, selected.length > 0 ? selected : null, selectedModel, title.trim())}
           disabled={mode === "ollama" && ollamaStatus === "down"}
           className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition-colors">
           Start Annotation

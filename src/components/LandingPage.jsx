@@ -23,6 +23,10 @@ const CSS = `
     0%, 100% { box-shadow: 0 0 24px rgba(63,98,255,0.4), 0 0 48px rgba(63,98,255,0.14); }
     50%       { box-shadow: 0 0 52px rgba(63,98,255,0.7), 0 0 96px rgba(63,98,255,0.28); }
   }
+  @keyframes lp-pulse-green {
+    0%, 100% { box-shadow: 0 0 24px rgba(52,211,153,0.4), 0 0 48px rgba(52,211,153,0.14); }
+    50%       { box-shadow: 0 0 52px rgba(52,211,153,0.72), 0 0 96px rgba(52,211,153,0.28); }
+  }
   @keyframes lp-shimmer {
     0%   { background-position: 0% center; }
     100% { background-position: 200% center; }
@@ -55,6 +59,11 @@ const CSS = `
   .lp-cta:hover {
     transform: scale(1.07);
     box-shadow: 0 0 60px rgba(63,98,255,0.65), 0 0 120px rgba(63,98,255,0.25) !important;
+  }
+  .lp-cta-g { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+  .lp-cta-g:hover {
+    transform: scale(1.07);
+    box-shadow: 0 0 60px rgba(52,211,153,0.6), 0 0 120px rgba(52,211,153,0.22) !important;
   }
   .lp-ghost {
     transition: border-color 0.25s, color 0.25s, background 0.25s;
@@ -391,15 +400,16 @@ export default function LandingPage() {
               🎬 Video → Docs
             </button>
 
-            <button onClick={handleDocChat} style={{
+            <button onClick={handleDocChat} className="lp-cta-g" style={{
               padding: '15px 38px', borderRadius: 100,
               background: 'linear-gradient(135deg, #10b981 0%, #22d3ee 100%)',
               border: 'none', color: '#06231c',
               cursor: 'pointer', fontSize: '1rem', fontWeight: 700,
               letterSpacing: '0.02em',
               boxShadow: '0 0 32px rgba(52,211,153,0.35)',
+              animation: 'lp-pulse-green 3.5s ease-in-out infinite',
             }}>
-              💬 Doc Chat
+              💬 Doc → Chat
             </button>
 
             <button
@@ -1068,14 +1078,15 @@ export default function LandingPage() {
             }}>
               🎬 Video → Docs
             </button>
-            <button onClick={handleDocChat} style={{
+            <button onClick={handleDocChat} className="lp-cta-g" style={{
               padding: '18px 48px', borderRadius: 100,
               background: 'linear-gradient(135deg, #10b981, #22d3ee)',
               border: 'none', color: '#06231c',
               cursor: 'pointer', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.03em',
               boxShadow: '0 0 44px rgba(52,211,153,0.35)',
+              animation: 'lp-pulse-green 3.5s ease-in-out infinite',
             }}>
-              💬 Doc Chat
+              💬 Doc → Chat
             </button>
           </div>
 

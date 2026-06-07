@@ -52,7 +52,7 @@ It works for:
 
 And the best part? **Everything runs in your browser.** No API keys. No cloud. No privacy trade-offs.
 
-P.S. — This is Version 1. I’m currently working on Version 2 to improve the overall documentation quality.
+P.S. — This is Version 2. I’m currently working on Version 3 to improve the overall documentation quality.
 ---
 
 ## 🌐 Live Demo

@@ -527,6 +527,23 @@ In `src/components/LandingPage.jsx`, find the `window.VANTA.NET({...})` call and
 
 ---
 
+## ✨ Features at a glance
+
+* Turn a screen recording into a clean step-by-step guide
+* In-browser Whisper transcription, no upload
+* OCR reads the actual on-screen text and lists the tools used `🆕 v2`
+* Animated step GIFs of the real action `🆕 v2`
+* Whole-video coverage via chunking, silent parts included `🆕 v2`
+* Pick your AI model with accuracy and time shown up front (1B / 1.5B / 3B), no auto-switching `🆕 v2`
+* Live loading steps for the browser model (download, GPU, compile, ready) `🆕 v2`
+* Optional Ollama for stronger local models
+* Vid Chat: ask your recording or document anything, with cited sources `🆕 v2`
+* Summary-aware answers that cover the whole document `🆕 v2`
+* Honest web fallback: if the doc lacks the answer, get the AI model's general knowledge or a real web search `🆕 v2`
+* Doc Chat app: upload any document and chat with it, processing starts on upload `🆕 v2`
+
+---
+
 ## 📄 License Notes
 
 All npm dependencies are MIT, Apache 2.0, or BSD licensed, fully compatible with commercial use.
@@ -559,20 +576,5 @@ VideoDoc is a browser-based productivity tool. Transcription accuracy depends on
 MIT License. See [LICENSE](LICENSE) for details.
 
 ---
-
-## ✨ Features at a glance
-
-* Turn a screen recording into a clean step-by-step guide
-* In-browser Whisper transcription, no upload
-* OCR reads the actual on-screen text and lists the tools used `🆕 v2`
-* Animated step GIFs of the real action `🆕 v2`
-* Whole-video coverage via chunking, silent parts included `🆕 v2`
-* Pick your AI model with accuracy and time shown up front (1B / 1.5B / 3B), no auto-switching `🆕 v2`
-* Live loading steps for the browser model (download, GPU, compile, ready) `🆕 v2`
-* Optional Ollama for stronger local models
-* Vid Chat: ask your recording or document anything, with cited sources `🆕 v2`
-* Summary-aware answers that cover the whole document `🆕 v2`
-* Honest web fallback: if the doc lacks the answer, get the AI model's general knowledge or a real web search `🆕 v2`
-* Doc Chat app: upload any document and chat with it, processing starts on upload `🆕 v2`
 * Export to HTML, PDF or DOCX
 * 100% in the browser, private, no API keys, no servers

@@ -113,7 +113,7 @@ export default function DocChatApp() {
                   <div className="text-xs text-zinc-500">
                     {chunking
                       ? "Chunking the document…"
-                      : `${passages.length} sections · ≈ ${approxTokens.toLocaleString()} tokens · building knowledge index`}
+                      : `${passages.length} sections · ≈ ${approxTokens.toLocaleString()} tokens`}
                   </div>
                 </div>
                 <button onClick={reset} className="ml-auto text-xs text-zinc-500 hover:text-zinc-300">Change file</button>

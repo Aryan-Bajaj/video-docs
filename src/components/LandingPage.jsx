@@ -193,28 +193,37 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (!vantaRef.current || !window.VANTA?.NET) return
-    vantaEffect.current = window.VANTA.NET({
-      el: vantaRef.current,
-      mouseControls: true,
-      touchControls: true,
-      gyroControls: false,
-      minHeight: 200,
-      minWidth: 200,
-      scale: 1.0,
-      scaleMobile: 1.0,
-      color: 0x3f62ff,
-      backgroundColor: 0x23153c,
-      points: 10,
-      maxDistance: 20,
-      spacing: 15,
-      showDots: true,
-    })
-    return () => { vantaEffect.current?.destroy() }
+    // Decorative only — never let a WebGL failure crash the landing page.
+    try {
+      vantaEffect.current = window.VANTA.NET({
+        el: vantaRef.current,
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200,
+        minWidth: 200,
+        scale: 1.0,
+        scaleMobile: 1.0,
+        color: 0x3f62ff,
+        backgroundColor: 0x23153c,
+        points: 10,
+        maxDistance: 20,
+        spacing: 15,
+        showDots: true,
+      })
+    } catch (e) {
+      console.warn('Vanta background disabled (no WebGL):', e?.message)
+    }
+    return () => { try { vantaEffect.current?.destroy() } catch {} }
   }, [])
 
   const handleEnter = () => {
     setLeaving(true)
     setTimeout(() => { window.location.href = '/#/app' }, 550)
+  }
+  const handleDocChat = () => {
+    setLeaving(true)
+    setTimeout(() => { window.location.href = '/#/docchat' }, 550)
   }
 
   return (
@@ -272,16 +281,22 @@ export default function LandingPage() {
             }}>VideoDoc</span>
           </div>
 
-          <button onClick={handleEnter} className="lp-nav-btn" style={{
-            padding: '9px 22px', borderRadius: 100,
-            background: 'transparent',
-            border: '1px solid rgba(63,98,255,0.4)',
-            color: 'rgba(123,150,255,0.95)',
-            cursor: 'pointer', fontSize: 13,
-            fontWeight: 500, letterSpacing: '0.04em',
-          }}>
-            Launch App →
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleDocChat} className="lp-nav-btn" style={{
+              padding: '9px 18px', borderRadius: 100,
+              background: 'transparent', border: '1px solid rgba(52,211,153,0.4)',
+              color: 'rgba(110,231,183,0.95)', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+            }}>
+              Doc Chat
+            </button>
+            <button onClick={handleEnter} className="lp-nav-btn" style={{
+              padding: '9px 18px', borderRadius: 100,
+              background: 'transparent', border: '1px solid rgba(63,98,255,0.4)',
+              color: 'rgba(123,150,255,0.95)', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+            }}>
+              Video → Docs
+            </button>
+          </div>
         </nav>
 
         {/* ── Hero ────────────────────────────────────────────── */}
@@ -362,25 +377,36 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* CTAs */}
+          {/* CTAs — pick an app */}
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
             <button onClick={handleEnter} className="lp-cta" style={{
-              padding: '15px 44px', borderRadius: 100,
+              padding: '15px 38px', borderRadius: 100,
               background: 'linear-gradient(135deg, #3f62ff 0%, #a78bfa 100%)',
               border: 'none', color: '#fff',
               cursor: 'pointer', fontSize: '1rem', fontWeight: 700,
-              letterSpacing: '0.04em',
+              letterSpacing: '0.02em',
               boxShadow: '0 0 32px rgba(63,98,255,0.42), 0 0 64px rgba(63,98,255,0.14)',
               animation: 'lp-pulse 3.5s ease-in-out infinite',
             }}>
-              Try It Free →
+              🎬 Video → Docs
+            </button>
+
+            <button onClick={handleDocChat} style={{
+              padding: '15px 38px', borderRadius: 100,
+              background: 'linear-gradient(135deg, #10b981 0%, #22d3ee 100%)',
+              border: 'none', color: '#06231c',
+              cursor: 'pointer', fontSize: '1rem', fontWeight: 700,
+              letterSpacing: '0.02em',
+              boxShadow: '0 0 32px rgba(52,211,153,0.35)',
+            }}>
+              💬 Doc Chat
             </button>
 
             <button
               onClick={() => document.getElementById('lp-how')?.scrollIntoView({ behavior: 'smooth' })}
               className="lp-ghost"
               style={{
-                padding: '15px 44px', borderRadius: 100,
+                padding: '15px 32px', borderRadius: 100,
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.15)',
                 color: 'rgba(255,255,255,0.62)',
@@ -1031,17 +1057,27 @@ export default function LandingPage() {
             No account. No cloud. No more putting it off.
           </p>
 
-          <button onClick={handleEnter} className="lp-cta" style={{
-            padding: '19px 64px', borderRadius: 100,
-            background: 'linear-gradient(135deg, #3f62ff, #a78bfa)',
-            border: 'none', color: '#fff',
-            cursor: 'pointer', fontSize: '1.05rem', fontWeight: 700,
-            letterSpacing: '0.05em',
-            boxShadow: '0 0 44px rgba(63,98,255,0.45), 0 0 88px rgba(63,98,255,0.16)',
-            animation: 'lp-pulse 3.5s ease-in-out infinite',
-          }}>
-            Document My First Video →
-          </button>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button onClick={handleEnter} className="lp-cta" style={{
+              padding: '18px 48px', borderRadius: 100,
+              background: 'linear-gradient(135deg, #3f62ff, #a78bfa)',
+              border: 'none', color: '#fff',
+              cursor: 'pointer', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.03em',
+              boxShadow: '0 0 44px rgba(63,98,255,0.45), 0 0 88px rgba(63,98,255,0.16)',
+              animation: 'lp-pulse 3.5s ease-in-out infinite',
+            }}>
+              🎬 Video → Docs
+            </button>
+            <button onClick={handleDocChat} style={{
+              padding: '18px 48px', borderRadius: 100,
+              background: 'linear-gradient(135deg, #10b981, #22d3ee)',
+              border: 'none', color: '#06231c',
+              cursor: 'pointer', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.03em',
+              boxShadow: '0 0 44px rgba(52,211,153,0.35)',
+            }}>
+              💬 Doc Chat
+            </button>
+          </div>
 
           <p style={{ marginTop: 26, fontSize: '0.78rem', color: 'rgba(255,255,255,0.22)', letterSpacing: '0.06em' }}>
             No sign-up · No API key · Works in Chrome and Edge

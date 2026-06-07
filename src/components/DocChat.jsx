@@ -83,16 +83,22 @@ export default function DocChat({ docs, aiMode, ollamaModel, onSeek }) {
             )}
             {m.sources?.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
-                {m.sources.map((s, k) => (
-                  <button key={k} onClick={() => onSeek?.(s.timestamp)}
-                    title="Jump to this moment in the video"
-                    className="flex items-center gap-2 bg-zinc-800/70 hover:bg-zinc-700 border border-zinc-700 rounded-lg pr-2.5 transition-colors">
-                    {s.frame
-                      ? <img src={s.frame} alt={s.label} className="w-12 h-8 object-cover rounded-l-lg" />
-                      : <span className="w-12 h-8 flex items-center justify-center text-[10px] text-zinc-500">{s.label}</span>}
-                    <span className="text-[11px] text-zinc-400 flex items-center gap-1"><CornerDownRight className="w-3 h-3" />{fmt(s.timestamp)}</span>
-                  </button>
-                ))}
+                {m.sources.map((s, k) => {
+                  const hasTime = s.timestamp != null
+                  return (
+                    <button key={k} onClick={() => hasTime && onSeek?.(s.timestamp)}
+                      title={hasTime ? "Jump to this moment in the video" : s.label}
+                      style={{ cursor: hasTime ? 'pointer' : 'default' }}
+                      className="flex items-center gap-2 bg-zinc-800/70 hover:bg-zinc-700 border border-zinc-700 rounded-lg pr-2.5 transition-colors">
+                      {s.frame
+                        ? <img src={s.frame} alt={s.label} className="w-12 h-8 object-cover rounded-l-lg" />
+                        : <span className="w-12 h-8 flex items-center justify-center text-[10px] text-zinc-500 px-1">{s.label}</span>}
+                      <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+                        <CornerDownRight className="w-3 h-3" />{hasTime ? fmt(s.timestamp) : 'source'}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>

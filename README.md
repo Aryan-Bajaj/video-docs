@@ -60,7 +60,8 @@ P.S. — This is Version 1. I’m currently working on Version 2 to improve the 
 👉 **[videodoc.netlify.app](https://videodoc.netlify.app)**
 
 * `/` is the landing page
-* `/#/app` is the VideoDoc application
+* `/#/app` is the VideoDoc app (video to documentation)
+* `/#/docchat` is the Doc Chat app (upload a document and chat with it)
 
 ---
 
@@ -74,6 +75,8 @@ Everything below runs client-side. No server, no API keys.
 * **Handles long videos (chunking) and covers the whole video.** The recording is split into time windows across its full length, not just where someone spoke, so silent stretches are still documented from the on-screen (OCR) text. Long recordings finish in a handful of focused passes instead of hundreds of tiny calls. Frame extraction auto-caps and downscales to stay within browser memory.
 * **You name the guide.** The document title is asked up front, so the heading is never the raw video file name.
 * **Browser-first by default.** WebLLM runs Llama 3.2 3B (falls back to 1B) so anyone can use it with zero install. Ollama stays available as an opt-in upgrade for stronger local models.
+* **Two apps, one project.** **VideoDoc** turns a recording into a guide and lets you Vid Chat with it. **Doc Chat** lets you upload a document directly, chunk it, and chat with it, no video required. Both are reachable from the landing page.
+* **Resilient by design.** The animated background is wrapped so a missing WebGL context (low-end devices, hardware acceleration off) can never blank the page. Verified by an automated headless render test of every route.
 
 ---
 

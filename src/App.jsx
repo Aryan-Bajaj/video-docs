@@ -200,6 +200,7 @@ export default function App() {
         >
           VideoDoc
         </button>
+        <a href="/#/docchat" className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors">· Doc Chat</a>
 
         {videoFile && !showAISettings && !isAnnotating && transcriptChunks.length > 0 && (
           <button

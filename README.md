@@ -2,9 +2,11 @@
 
 **Automated Video Documentation · AI Transcription · Local LLM Annotation · Beautiful Exports**
 
-`React` `Whisper AI` `Ollama` `WebLLM` `Three.js` `Vanta` `Vite` `License: MIT`
+`React` `Whisper AI` `Ollama` `WebLLM` `OCR` `RAG` `Three.js` `Vite` `License: MIT` `Version 2`
 
 > Turn any screen recording into polished, step-by-step documentation, entirely in your browser. No server. No uploads. No subscription. Ever.
+
+> **Now on Version 2.** It reads the screen with OCR, builds animated step GIFs, covers the whole video with chunking, and adds **Vid Chat** and a standalone **Doc Chat** app. Every v2 addition is marked **🆕 New in v2** throughout this document. See [New in v2](#-new-in-v2).
 
 ---
 
@@ -12,14 +14,20 @@
 
 1. [What Is This?](#-what-is-this)
 2. [Live Demo](#-live-demo)
-3. [How It Works: The Full Pipeline](#-how-it-works-the-full-pipeline)
-4. [Module Breakdown](#-module-breakdown)
+3. [New in v2](#-new-in-v2) `🆕`
+4. [How It Works: The Full Pipeline](#-how-it-works-the-full-pipeline)
+5. [Module Breakdown](#-module-breakdown)
    - [Module 1: Frame Extraction](#module-1-frame-extraction)
    - [Module 2: Audio Extraction](#module-2-audio-extraction)
    - [Module 3: Whisper AI Transcription](#module-3-whisper-ai-transcription)
    - [Module 4: AI Annotation (Ollama / WebLLM)](#module-4-ai-annotation-ollama--webllm)
    - [Module 5: Export Engine](#module-5-export-engine)
-5. [Repository Structure](#-repository-structure)
+   - [Module 6: Read Screen with OCR](#module-6-read-screen-with-ocr) `🆕 v2`
+   - [Module 7: Animated Step GIFs](#module-7-animated-step-gifs) `🆕 v2`
+   - [Module 8: Chunking and Whole-Video Coverage](#module-8-chunking-and-whole-video-coverage) `🆕 v2`
+   - [Module 9: Vid Chat (in-browser RAG)](#module-9-vid-chat-in-browser-rag) `🆕 v2`
+   - [Module 10: Doc Chat app](#module-10-doc-chat-app) `🆕 v2`
+6. [Repository Structure](#-repository-structure)
 6. [Tech Stack](#-tech-stack)
 7. [Getting Started](#-getting-started)
 8. [Deploying to Netlify](#-deploying-to-netlify)
@@ -82,31 +90,44 @@ Everything below runs client-side. No server, no API keys.
 
 ## 🔄 How It Works: The Full Pipeline
 
+**App 1: VideoDoc (video → guide)**
+
 ```
-┌─────────────┐     ┌─────────────────────┐     ┌──────────────────────┐
-│  Upload     │────▶│  Extract             │────▶│  Whisper AI          │
-│  Video      │     │  Frames + Audio      │     │  Transcription       │
-│  (.mp4/     │     │  (every 5s JPEG +    │     │  (Web Worker,        │
-│  .mov/.webm)│     │  16kHz mono audio)   │     │  ~95% accuracy)      │
-└─────────────┘     └─────────────────────┘     └──────────┬───────────┘
-                                                            │
-                              ┌─────────────────────────────┘
-                              │
-                    ┌─────────▼──────────────────────────────────────────┐
-                    │           AI Annotation (auto-detected)            │
-                    │                                                    │
-                    │   ┌─────────────────┐    ┌───────────────────┐   │
-                    │   │  Ollama found?  │    │  WebLLM fallback  │   │
-                    │   │  localhost:     │    │  Llama-3.2-1B     │   │
-                    │   │  11434          │    │  via WebGPU       │   │
-                    │   │  ✅ RECOMMENDED │    │  ✅ NO INSTALL    │   │
-                    │   └─────────────────┘    └───────────────────┘   │
-                    └──────────────────────────┬─────────────────────────┘
-                                               │
-                              ┌────────────────▼────────────────┐
-                              │         Export Engine           │
-                              │  🌐 HTML  │  📄 PDF  │  📝 DOCX │
-                              └─────────────────────────────────┘
+┌─────────────┐   ┌──────────────────────┐   ┌─────────────────────┐   ┌──────────────────────┐
+│  Upload     │──▶│  Extract             │──▶│  Whisper AI          │──▶│  Read Screen (OCR)   │
+│  Video      │   │  Frames + Audio      │   │  Transcription       │   │  on-screen text +    │
+│  (.mp4/.mov │   │  (auto-capped,       │   │  (Web Worker,        │   │  tools detected      │
+│  /.webm)    │   │  downscaled)         │   │  ~95% accuracy)      │   │  (Excel, VBA, SAP…)  │
+└─────────────┘   └──────────────────────┘   └──────────────────────┘   └──────────┬───────────┘
+                                                                                    │
+        ┌───────────────────────────────────────────────────────────────────────────┘
+        │
+┌───────▼──────────────────────────────────────────────────────────┐
+│   Chunk transcript into time windows (covers the WHOLE video)     │
+│   then AI Annotation (auto-detected)                              │
+│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│   │  Ollama found?       │    │  WebLLM fallback             │   │
+│   │  localhost:11434     │    │  Llama-3.2-3B via WebGPU     │   │
+│   │  ✅ stronger models  │    │  ✅ no install (browser)     │   │
+│   └──────────────────────┘    └──────────────────────────────┘   │
+└───────────────────────────────┬──────────────────────────────────┘
+                                 │
+       ┌─────────────────────────┴───────────────────────────┐
+       │                                                      │
+┌──────▼──────────────────────────────┐        ┌──────────────▼───────────────┐
+│         Export Engine               │        │   Vid Chat (in-browser RAG)  │
+│  🌐 HTML (animated step GIFs)       │        │   ask the guide, get answers │
+│  📄 PDF        📝 DOCX              │        │   + matching frame + jump    │
+└─────────────────────────────────────┘        └──────────────────────────────┘
+```
+
+**App 2: Doc Chat (document → chat)**
+
+```
+┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────────────┐
+│  Upload a document   │──▶│  Extract text +      │──▶│  Doc Chat (in-browser RAG)   │
+│  .txt .md .html .docx│   │  chunk (big docs OK) │   │  MiniLM embeddings + answers │
+└──────────────────────┘   └──────────────────────┘   └──────────────────────────────┘
 ```
 
 ---
@@ -272,6 +293,42 @@ Word-compatible document via the `docx` package. Paste directly into Notion, Con
 
 ---
 
+### Module 6: Read Screen with OCR
+
+**🆕 New in v2.** After frames are captured, `tesseract.js` reads the actual on-screen text directly off the frames (sampled and bounded so it stays fast). That text is fed to the LLM so steps name the exact buttons, menus and files, and a signature scan detects the tools used (Excel, VBA, SAP, VS Code, Python and more) which are then listed in the guide.
+
+| Parameter | Value |
+|---|---|
+| Engine | tesseract.js (in browser) |
+| Frames read | sampled, capped for speed |
+| Output | on-screen text per frame + detected tools |
+
+---
+
+### Module 7: Animated Step GIFs
+
+**🆕 New in v2.** Each documented step becomes a short GIF of the real action: a clip from 3 seconds before to 3 seconds after the keyframe, captured by seeking a hidden `<video>` and encoded with `gifenc`. Optimised with downscaling, a low frame rate and a single shared colour palette, then embedded into the HTML guide in place of a static screenshot.
+
+---
+
+### Module 8: Chunking and Whole-Video Coverage
+
+**🆕 New in v2.** The transcript is split into time windows across the full length of the video, not just where someone spoke. Silent stretches are still documented from the OCR text. This keeps long recordings coherent (a handful of focused passes instead of hundreds of tiny calls) and bounds the number of LLM requests.
+
+---
+
+### Module 9: Vid Chat (in-browser RAG)
+
+**🆕 New in v2.** Ask the finished guide questions. Each segment is embedded with MiniLM (`@huggingface/transformers`, runs in the browser), the closest segments to the question are retrieved by cosine similarity, and the local LLM answers grounded in those segments, showing the matching frame and a jump-to-moment link. No server, no API keys.
+
+---
+
+### Module 10: Doc Chat app
+
+**🆕 New in v2.** A second app (at `/#/docchat`). Upload a document (`.txt`, `.md`, `.html`, `.docx`); the text is extracted and chunked into overlapping passages so even large documents index cleanly, then the same in-browser RAG lets you chat with it. No video required.
+
+---
+
 ## 🗂️ Repository Structure
 
 ```
@@ -284,44 +341,52 @@ video-docs/
 │
 ├── public/
 │   ├── _redirects                ← Netlify SPA fallback
+│   ├── _headers                  ← COEP/COOP for drag-drop deploys   🆕 v2
 │   ├── three.min.js              ← Three.js r134 (same-origin, bypasses COEP)
 │   ├── vanta.halo.min.js         ← Vanta HALO effect (app background)
 │   └── vanta.net.min.js          ← Vanta NET effect (landing background)
 │
 └── src/
-    ├── main.jsx                  ← HashRouter → / (landing) and /app (app)
-    ├── App.jsx                   ← VideoDoc pipeline UI + Vanta HALO background
+    ├── main.jsx                  ← HashRouter → / · /app · /docchat       🆕 v2 route
+    ├── App.jsx                   ← VideoDoc pipeline UI + OCR + Vid Chat
+    ├── DocChatApp.jsx            ← Doc Chat app (upload a doc, chat)      🆕 v2
     ├── index.css                 ← Indeterminate progress animation
     │
     ├── components/
-    │   ├── LandingPage.jsx       ← Full landing page (Vanta NET)
-    │   ├── Uploader.jsx          ← 3 drop cards: video / code / reference doc
+    │   ├── LandingPage.jsx       ← Full landing page (two app buttons)
+    │   ├── Uploader.jsx          ← Drop cards: video / code / reference doc
     │   ├── VideoPlayer.jsx       ← Seekable video preview
     │   ├── FrameStrip.jsx        ← Horizontal frame timeline
     │   ├── DocPreview.jsx        ← Live transcript + annotation viewer
-    │   ├── ExportBar.jsx         ← HTML / PDF / DOCX export buttons
-    │   ├── AISettings.jsx        ← Ollama model picker + section config
+    │   ├── ExportBar.jsx         ← HTML / PDF / DOCX export (+ GIFs)
+    │   ├── AISettings.jsx        ← Title + Ollama model picker + sections
+    │   ├── DocChat.jsx           ← Vid Chat / Doc Chat panel             🆕 v2
+    │   ├── DocChatDemo.jsx       ← Looping Vid Chat landing animation     🆕 v2
     │   ├── ProductDemo.jsx       ← Animated landing-page product demo
     │   ├── BeforeAfter.jsx       ← Before/after comparison slider
     │   ├── VideoDocLogo.jsx      ← Custom SVG logo
     │   └── PipelineStatus.jsx    ← Live step tracker (elapsed, %, ETA)
     │
     ├── hooks/
-    │   ├── useFrameExtractor.js  ← Canvas-based frame extraction
-    │   ├── useAudioExtractor.js  ← Web Audio API → 16kHz Float32Array
+    │   ├── useFrameExtractor.js  ← Frame extraction (capped + downscaled) 🆕 v2 hardening
+    │   ├── useAudioExtractor.js  ← Web Audio API → 16kHz (guarded)        🆕 v2 hardening
     │   ├── useTranscriber.js     ← Whisper Web Worker wrapper
-    │   ├── useAnnotator.js       ← LLM annotation (Ollama + WebLLM)
-    │   ├── useDocParser.js       ← .html/.docx → section headings
-    │   └── useVantaHalo.js       ← Vanta HALO background for app page
+    │   ├── useAnnotator.js       ← Windowed annotation + OCR context      🆕 v2
+    │   ├── useOCR.js             ← Tesseract OCR + tool detection         🆕 v2
+    │   ├── useGifMaker.js        ← Browser GIF encoding per step          🆕 v2
+    │   ├── useRAG.js             ← In-browser embeddings + retrieval      🆕 v2
+    │   ├── useDocParser.js       ← headings + full-text extract + chunk   🆕 v2 (chunk)
+    │   └── useVantaHalo.js       ← Vanta HALO background (WebGL-guarded)   🆕 v2 hardening
     │
     ├── workers/
     │   └── transcriber.worker.js ← Whisper in isolated Web Worker thread
     │
     └── lib/
-        ├── skillPrompt.js        ← LLM prompt builder + response parser
-        ├── exportHTML.js         ← Animated HTML guide generator
-        ├── exportPDF.js          ← jsPDF export
-        └── exportDOCX.js         ← docx package export
+        ├── llm.js                ← Shared Ollama + WebLLM calls           🆕 v2
+        ├── skillPrompt.js        ← OCR-aware prompts + window chunking    🆕 v2
+        ├── exportHTML.js         ← HTML guide (title, tools, step GIFs)
+        ├── exportPDF.js          ← jsPDF export (title + tools)
+        └── exportDOCX.js         ← docx export (title + tools)
 ```
 
 ---

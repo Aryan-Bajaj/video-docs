@@ -14,12 +14,14 @@ import useAnnotator from "./hooks/useAnnotator"
 import useDocParser from "./hooks/useDocParser"
 import useOCR from "./hooks/useOCR"
 import useVantaHalo from "./hooks/useVantaHalo"
+import { webLLMLabel } from "./lib/llm"
 
 const INITIAL_STEPS = [
   { id: 'frames',     label: 'Extract Frames',   status: 'pending', detail: null },
   { id: 'audio',      label: 'Extract Audio',     status: 'pending', detail: null },
   { id: 'transcribe', label: 'Transcribe Audio',  status: 'pending', detail: null, pct: null },
   { id: 'ocr',        label: 'Read Screen (OCR)', status: 'pending', detail: null, pct: null, step: null, total: null },
+  { id: 'loadmodel',  label: 'Load AI Model',     status: 'pending', detail: null, pct: null },
   { id: 'annotate',   label: 'Annotate Segments', status: 'pending', detail: null, pct: null, step: null, total: null, etaMs: null },
 ]
 
@@ -116,23 +118,41 @@ export default function App() {
     }
   }
 
-  const handleStartAnnotation = async (aiMode, sections, ollamaModel, title) => {
+  const handleStartAnnotation = async (aiMode, sections, model, title) => {
     setShowAISettings(false)
     setError(null)
     if (title) setDocTitle(title)
     setAiMode(aiMode)
-    setAiModel(ollamaModel)
-    const startedAt = Date.now()
-    annotateStartRef.current = startedAt
-    const modelLabel = aiMode === 'ollama' ? (ollamaModel || 'ollama') : 'WebLLM'
+    setAiModel(model)
+    const isWeb = aiMode !== 'ollama'
+    annotateStartRef.current = null // set when token generation actually begins
+
+    // "Load AI Model" step: tracked live for WebLLM (download → GPU → compile →
+    // ready); Ollama loads server-side so we just mark it ready.
+    if (isWeb) {
+      updateStep('loadmodel', { status: 'active', detail: 'Preparing browser AI...', pct: null, startedAt: Date.now(), endedAt: null })
+    } else {
+      annotateStartRef.current = Date.now()
+      updateStep('loadmodel', { status: 'done', detail: `Ollama · ${model || 'model'}`, startedAt: Date.now(), endedAt: Date.now() })
+    }
+
+    const modelLabel = isWeb ? `WebLLM · ${webLLMLabel(model)}` : (model || 'ollama')
     updateStep('annotate', {
-      status: 'active',
+      status: isWeb ? 'pending' : 'active',
       step: 0,
       total: transcriptChunks.length,
       etaMs: null,
       detail: `${modelLabel}${sections?.length ? ` · ${sections.length} sections` : ' · auto steps'}`,
-      startedAt,
+      startedAt: isWeb ? null : Date.now(),
     })
+
+    // Flip from "loading model" to "generating" the moment the model is ready.
+    const markGenStart = () => {
+      if (annotateStartRef.current) return
+      annotateStartRef.current = Date.now()
+      updateStep('loadmodel', { status: 'done', detail: 'Model ready on WebGPU', endedAt: Date.now() })
+      updateStep('annotate', { status: 'active', startedAt: Date.now() })
+    }
 
     try {
       const docs = await annotate(
@@ -140,20 +160,29 @@ export default function App() {
         frames,
         aiMode,
         (i, total) => {
-          const elapsed = Date.now() - annotateStartRef.current
-          const avgMs = elapsed / (i + 1)
-          const etaMs = (total - i - 1) * avgMs
+          const started = annotateStartRef.current
+          let etaMs = null
+          if (started && i > 0) {
+            const avgMs = (Date.now() - started) / i
+            etaMs = (total - i) * avgMs
+          }
           updateStep('annotate', { step: i + 1, total, etaMs: etaMs > 0 ? etaMs : null })
         },
-        (msg) => updateStep('annotate', { detail: msg }),
+        // model-loading status (WebLLM): drive the Load AI Model step
+        (msg, pct, phase) => {
+          if (!isWeb) { updateStep('annotate', { detail: msg }); return }
+          if (phase === 'ready') { markGenStart(); return }
+          updateStep('loadmodel', { status: 'active', detail: msg, pct: pct ?? null })
+        },
         sections,
-        ollamaModel,
+        model,
         ocrFrameTexts
       )
       setAnnotatedDocs(docs)
       updateStep('annotate', { status: 'done', detail: `${docs.length} entries annotated`, endedAt: Date.now() })
     } catch (e) {
       updateStep('annotate', { status: 'error', detail: e.message, endedAt: Date.now() })
+      if (isWeb) updateStep('loadmodel', { status: 'error', detail: e.message, endedAt: Date.now() })
       setError(e.message)
     }
   }

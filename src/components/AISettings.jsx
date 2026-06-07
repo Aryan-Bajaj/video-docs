@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react"
 import { X, Globe, Cpu, Plus, FileText, ChevronDown } from "lucide-react"
 import { DEFAULT_SECTIONS } from "../hooks/useDocParser"
+import { WEBLLM_MODELS, DEFAULT_WEBLLM_MODEL } from "../lib/llm"
 
 export default function AISettings({ onConfirm, onClose, suggestedSections, toolsUsed = [] }) {
   const [mode, setMode] = useState("webllm") // browser-first: works for everyone, no install
   const [ollamaStatus, setOllamaStatus] = useState("checking")
   const [ollamaModels, setOllamaModels] = useState([])
   const [selectedModel, setSelectedModel] = useState("")
+  const [webModel, setWebModel] = useState(DEFAULT_WEBLLM_MODEL)
   const [selected, setSelected] = useState([])
   const [customSections, setCustomSections] = useState([])
   const [customInput, setCustomInput] = useState("")
@@ -119,6 +121,40 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
             </button>
           </div>
 
+          {/* WebLLM model picker — speed vs accuracy, all in-browser */}
+          {mode === "webllm" && (() => {
+            const m = WEBLLM_MODELS.find(x => x.id === webModel) ?? WEBLLM_MODELS[0]
+            return (
+              <div className="mt-3">
+                <p className="text-xs text-zinc-500 mb-1.5">Browser model</p>
+                <div className="relative">
+                  <select
+                    value={webModel}
+                    onChange={e => setWebModel(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 appearance-none focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    {WEBLLM_MODELS.map(o => (
+                      <option key={o.id} value={o.id}>{o.label} · {o.params} · {o.size}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2.5">
+                  {[['Accuracy', m.accuracy], ['Speed', m.speed], ['Per segment', m.time]].map(([k, v]) => (
+                    <div key={k} className="bg-zinc-800/60 border border-zinc-700/60 rounded-lg px-2.5 py-2">
+                      <div className="text-[10px] uppercase tracking-wider text-zinc-500">{k}</div>
+                      <div className="text-xs font-medium text-emerald-300 mt-0.5">{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-600 mt-2 leading-relaxed">{m.note}</p>
+                <p className="text-xs text-zinc-600 mt-1.5">
+                  Times are a rough per-segment estimate plus a one-time model download. Slower on Intel / integrated graphics, faster on a dedicated GPU.
+                </p>
+              </div>
+            )
+          })()}
+
           {/* Model selector — shown when Ollama is running */}
           {mode === "ollama" && ollamaStatus === "ok" && ollamaModels.length > 0 && (
             <div className="mt-3">
@@ -225,7 +261,7 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
         </div>
 
         <button
-          onClick={() => onConfirm(mode, selected.length > 0 ? selected : null, selectedModel, title.trim())}
+          onClick={() => onConfirm(mode, selected.length > 0 ? selected : null, mode === "ollama" ? selectedModel : webModel, title.trim())}
           disabled={mode === "ollama" && ollamaStatus === "down"}
           className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition-colors">
           Start Annotation

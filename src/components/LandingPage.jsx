@@ -871,15 +871,28 @@ export default function LandingPage() {
                     color: '#c4b5fd', letterSpacing: '0.05em',
                   }}>NO INSTALL</span>
                 </div>
-                <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 16 }}>
-                  No Ollama? VideoDoc loads <code style={{ fontSize: 11, background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: 4 }}>Llama-3.2-3B</code> directly
-                  in your browser via WebGPU (falls back to 1B). Nothing to install, but needs a WebGPU-capable browser (Chrome 113+).
+                <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 14 }}>
+                  No Ollama? VideoDoc runs the model right in your browser via WebGPU. You pick the model yourself, with accuracy and speed shown up front, so nothing changes behind your back. Needs a WebGPU browser (Chrome 113+).
                 </p>
+                {/* In-browser model picker — user chooses speed vs accuracy */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
+                  {[
+                    { label: 'Fast · 1B',     size: '~0.9 GB', acc: 'Good',   eta: '10 to 30s', tag: 'Default' },
+                    { label: 'Balanced · 1.5B', size: '~1.3 GB', acc: 'Better', eta: '20 to 50s' },
+                    { label: 'Quality · 3B',  size: '~2.2 GB', acc: 'Best',   eta: '40s to 2m' },
+                  ].map((m, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(167,139,250,0.18)' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{m.label}</span>
+                      {m.tag && <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 100, background: 'rgba(34,197,94,0.18)', color: '#86efac' }}>{m.tag}</span>}
+                      <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{m.size} · {m.acc} · {m.eta}/segment</span>
+                    </div>
+                  ))}
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
-                    { label: 'Output quality', val: 82, color: '#a78bfa', note: '3B model' },
+                    { label: 'Output quality', val: 82, color: '#a78bfa', note: 'you pick' },
                     { label: 'Privacy',         val: 100, color: '#22c55e' },
-                    { label: 'Speed',           val: 55, color: '#fbbf24', note: 'GPU-dependent' },
+                    { label: 'Speed',           val: 55, color: '#fbbf24', note: 'depends on your GPU' },
                   ].map((bar, i) => (
                     <div key={i}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -893,7 +906,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 16, flexWrap: 'wrap' }}>
-                  {['Zero install', 'Still private', 'Needs Chrome 113+'].map((t, i) => (
+                  {['Zero install', 'Pick your model', 'Still private', 'Needs Chrome 113+'].map((t, i) => (
                     <span key={i} style={{
                       padding: '3px 10px', borderRadius: 100, fontSize: 10, fontWeight: 600,
                       background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)',
@@ -969,7 +982,7 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             {[
               { icon: '🎧', name: 'Whisper (speech to text)', size: '~150 MB', when: 'When you upload your first video', color: '#06b6d4' },
-              { icon: '🧠', name: 'WebLLM (writes the steps)', size: '~2 GB · 3B', when: 'First annotation in browser mode. ~0.9 GB for the 1B fallback', color: '#a78bfa' },
+              { icon: '🧠', name: 'WebLLM (writes the steps)', size: '~0.9 to 2.2 GB', when: 'First annotation in browser mode. You pick the model: 1B (Fast), 1.5B (Balanced) or 3B (Quality)', color: '#a78bfa' },
               { icon: '💬', name: 'Embeddings (doc chat)', size: '~90 MB', when: 'First time you ask your documentation a question', color: '#34d399' },
               { icon: '👁', name: 'OCR (reads the screen)', size: '~12 MB', when: 'When screen text is read off the frames', color: '#22d3ee' },
             ].map((m, i) => (

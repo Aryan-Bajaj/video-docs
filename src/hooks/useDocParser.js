@@ -23,7 +23,21 @@ export async function extractText(file) {
   if (/\.(txt|md|csv|json)$/.test(name)) return await file.text()
   if (/\.html?$/.test(name)) {
     const html = await file.text()
-    return new DOMParser().parseFromString(html, 'text/html').body?.textContent?.trim() || ''
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    // Drop non-content nodes — otherwise their CSS / JS text pollutes the index
+    // and the chat ends up "reading" stylesheets instead of the real document.
+    doc.querySelectorAll('script,style,noscript,svg,template,link,meta').forEach((el) => el.remove())
+    const body = doc.body
+    if (!body) return ''
+    // Block elements don't add whitespace in textContent, so words jam together.
+    // Append a newline to each block so the extracted text stays readable.
+    body.querySelectorAll('p,div,br,li,tr,td,th,h1,h2,h3,h4,h5,h6,section,article,header,footer,blockquote,pre')
+      .forEach((el) => el.append('\n'))
+    return (body.textContent || '')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n[ \t]+/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
   }
   if (/\.docx$/.test(name)) {
     const mammoth = await import('mammoth')

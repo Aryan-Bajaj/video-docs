@@ -79,10 +79,10 @@ Everything below runs client-side. No server, no API keys.
 
 * **Reads your screen (OCR).** Tesseract reads the on-screen text off the frames, so steps name the exact buttons, menus and files, and the tools you used (Excel, VBA, SAP, VS Code, Python and more) are detected automatically and listed in the guide.
 * **Animated step GIFs.** Each step becomes a smooth GIF of the real action: a clip from 3 seconds before to 3 seconds after the keyframe, encoded in the browser with `gifenc` and embedded into the HTML guide. Optimised with downscaling, low frame rate and a shared palette.
-* **Vid Chat (RAG).** Ask your recording questions, either after a full guide is built or right after transcription. Embeddings run in the browser (MiniLM via `transformers.js`), the closest moments are retrieved, and the local LLM answers, showing the matching frame and a jump-to-moment link.
+* **Vid Chat (RAG).** Ask your recording questions, either after a full guide is built or right after transcription. Embeddings run in the browser (MiniLM via `transformers.js`), the closest moments are retrieved, and the local LLM answers, showing the matching frame and a jump-to-moment link. Summary or "what is this all about?" questions are detected and answered from passages sampled across the whole document, not just the four nearest. Live progress steps (searching, loading model, writing) replace any frozen spinner.
 * **Handles long videos (chunking) and covers the whole video.** The recording is split into time windows across its full length, not just where someone spoke, so silent stretches are still documented from the on-screen (OCR) text. Long recordings finish in a handful of focused passes instead of hundreds of tiny calls. Frame extraction auto-caps and downscales to stay within browser memory.
 * **You name the guide.** The document title is asked up front, so the heading is never the raw video file name.
-* **Browser-first by default.** WebLLM runs Llama 3.2 3B (falls back to 1B) so anyone can use it with zero install. Ollama stays available as an opt-in upgrade for stronger local models.
+* **Browser-first, and you pick the model.** WebLLM runs in your browser with zero install. A model picker shows the accuracy and per-segment time of each option (Fast 1B, Balanced 1.5B, Quality 3B); the app never auto-switches. The default is the 1B model so Intel / integrated graphics stay responsive. Ollama stays available as an opt-in upgrade for stronger local models.
 * **Two apps, one project.** **VideoDoc** turns a recording into a guide and lets you Vid Chat with it. **Doc Chat** lets you upload a document directly, chunk it, and chat with it, no video required. Both are reachable from the landing page.
 * **Resilient by design.** The animated background is wrapped so a missing WebGL context (low-end devices, hardware acceleration off) can never blank the page. Verified by an automated headless render test of every route.
 
@@ -239,24 +239,17 @@ Write STEPS: 1. ... 2. ... and RESULT: ...
 
 Context-aware: the LLM knows what came before and after each segment, so annotations flow naturally as a document.
 
-#### 🟣 Path B: WebLLM (Fallback)
+#### 🟣 Path B: WebLLM, you pick the model `🆕 v2`
 
-No Ollama? No problem. VideoDoc loads **Llama-3.2-1B-Instruct** directly into your browser via WebGPU using `@mlc-ai/web-llm`.
+No Ollama? No problem. VideoDoc runs the model directly in your browser via WebGPU using `@mlc-ai/web-llm`. **🆕 New in v2:** instead of silently choosing for you, the app now shows a model picker with the accuracy and per-segment time of each option, so you choose the speed/quality trade-off yourself. It never auto-switches.
 
-```
-No Ollama detected
-    ↓
-Loading Llama-3.2-1B-Instruct-q4f32_1-MLC via WebGPU...
-    ↓
-Model cached in browser after first load
-```
+| Model | Size | Accuracy | Speed | Per-segment ETA |
+|---|---|---|---|---|
+| **Fast · Llama 3.2 1B** (default) | ~0.9 GB | Good | Fastest | 10 to 30s |
+| **Balanced · Qwen 2.5 1.5B** | ~1.3 GB | Better | Medium | 20 to 50s |
+| **Quality · Llama 3.2 3B** | ~2.2 GB | Best | Slow | 40s to 2m |
 
-| Metric | Value |
-|---|---|
-| Output quality | ★★★★☆ (smaller model, shorter outputs) |
-| Privacy | 100% local (runs in your tab) |
-| Speed | WebGPU-dependent |
-| Requires | Chrome 113+ / Edge 113+ |
+The default is the 1B model so laptops with Intel / integrated graphics stay responsive; a dedicated GPU can comfortably run the 3B. The chosen model downloads once, then is cached in your browser. While it loads, the pipeline shows distinct live steps (download → load into GPU → compile shaders → ready) instead of one frozen line. Requires Chrome 113+ / Edge 113+.
 
 ---
 
@@ -321,11 +314,24 @@ Word-compatible document via the `docx` package. Paste directly into Notion, Con
 
 **🆕 New in v2.** Ask the finished guide questions. Each segment is embedded with MiniLM (`@huggingface/transformers`, runs in the browser), the closest segments to the question are retrieved by cosine similarity, and the local LLM answers grounded in those segments, showing the matching frame and a jump-to-moment link. No server, no API keys.
 
+Refinements in this revision:
+
+* **Summary aware.** "What is this all about?", "give me a summary" and similar questions are detected and answered from passages sampled evenly across the whole document, so an overview actually covers everything instead of four random excerpts.
+* **Live progress, not a frozen spinner.** The panel shows the real phase with a progress bar (searching → downloading / loading model with a percent → writing the answer).
+* **Readable dark panel.** The chat uses a solid dark surface instead of a translucent one.
+* **Sources you can open.** For document parts with no timestamp, clicking a source expands the exact passage it used; for video, it still jumps to the moment.
+
 ---
 
 ### Module 10: Doc Chat app
 
 **🆕 New in v2.** A second app (at `/#/docchat`). Upload a document (`.txt`, `.md`, `.html`, `.docx`); the text is extracted and chunked into overlapping passages so even large documents index cleanly, then the same in-browser RAG lets you chat with it. No video required.
+
+How it behaves now:
+
+* **Process starts on upload.** As soon as the file lands, it is chunked and the knowledge index is built in the background. You do not have to ask first, so the first answer comes back fast.
+* **Pick your model side by side.** While indexing runs, the same model picker (WebLLM Fast / Balanced / Quality with accuracy and ETA, plus Ollama if detected) is right there to choose from. It never auto-switches.
+* **Clean HTML extraction.** For `.html` files, `<script>` and `<style>` are stripped before reading, so the chat indexes the real document text and not stylesheet or script code. The header shows the section count and an approximate token count.
 
 ---
 
@@ -398,7 +404,7 @@ video-docs/
 | **React 18 + Vite 6** | Frontend framework + build tool |
 | **Tailwind CSS v4** | Utility-first styling |
 | **@huggingface/transformers v4** | Whisper transcription + MiniLM embeddings (RAG), in browser via ONNX |
-| **@mlc-ai/web-llm** | WebLLM, Llama 3.2 3B/1B via WebGPU |
+| **@mlc-ai/web-llm** | WebLLM via WebGPU, user-selectable: Llama 3.2 1B (default) / Qwen 2.5 1.5B / Llama 3.2 3B |
 | **Ollama** | Local LLM server (optional, user-installed) |
 | **tesseract.js** | In-browser OCR (on-screen text + tool detection) |
 | **gifenc** | In-browser GIF encoding for animated step clips |

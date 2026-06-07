@@ -60,7 +60,7 @@ export default function useAnnotator() {
       try {
         annotation = aiMode === "ollama"
           ? await callOllama(userMsg, prompt, ollamaModel)
-          : await callWebLLM(userMsg, prompt, onStatus)
+          : await callWebLLM(userMsg, prompt, onStatus, { model: ollamaModel })
         if (sections?.length && annotation) {
           sectionedAnnotation = parseSectionedAnnotation(annotation, sections)
         }

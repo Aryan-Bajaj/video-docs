@@ -320,6 +320,7 @@ Refinements in this revision:
 * **Live progress, not a frozen spinner.** The panel shows the real phase with a progress bar (searching → downloading / loading model with a percent → writing the answer).
 * **Readable dark panel.** The chat uses a solid dark surface instead of a translucent one.
 * **Sources you can open.** For document parts with no timestamp, clicking a source expands the exact passage it used; for video, it still jumps to the moment.
+* **Honest when the document doesn't have the answer.** If retrieval is weak (the question isn't covered), it doesn't bluff. It says so and offers two choices: answer from the AI model's own general knowledge (clearly labelled as not from your document), or open a real web search (Perplexity, with sources) in a new tab. Nothing is scraped silently and the privacy promise stays intact.
 
 ---
 
@@ -556,3 +557,22 @@ VideoDoc is a browser-based productivity tool. Transcription accuracy depends on
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## ✨ Features at a glance
+
+* Turn a screen recording into a clean step-by-step guide
+* In-browser Whisper transcription, no upload
+* OCR reads the actual on-screen text and lists the tools used `🆕 v2`
+* Animated step GIFs of the real action `🆕 v2`
+* Whole-video coverage via chunking, silent parts included `🆕 v2`
+* Pick your AI model with accuracy and time shown up front (1B / 1.5B / 3B), no auto-switching `🆕 v2`
+* Live loading steps for the browser model (download, GPU, compile, ready) `🆕 v2`
+* Optional Ollama for stronger local models
+* Vid Chat: ask your recording or document anything, with cited sources `🆕 v2`
+* Summary-aware answers that cover the whole document `🆕 v2`
+* Honest web fallback: if the doc lacks the answer, get the AI model's general knowledge or a real web search `🆕 v2`
+* Doc Chat app: upload any document and chat with it, processing starts on upload `🆕 v2`
+* Export to HTML, PDF or DOCX
+* 100% in the browser, private, no API keys, no servers

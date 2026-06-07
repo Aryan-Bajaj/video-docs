@@ -55,7 +55,7 @@ export default function useRAG() {
   // "Summary / overview" questions can't be served by 4 nearest chunks — they
   // need a spread across the whole document. Detect them and sample widely.
   const isOverviewQuestion = (q) =>
-    /summar|overview|\btl;?dr\b|\bgist\b|\boverall\b|in general|main (point|idea|topic)|key (point|takeaway)|explain (this|the|everything|it all)|what(?:'s| is| are)?\b[^?]*\b(this|it|the (doc|document|file|video|recording|dashboard))\b[^?]*\b(about|do|cover|contain)|what is this/i.test(q || "").test(q)
+    /summar|overview|\btl;?dr\b|\bgist\b|\boverall\b|in general|main (point|idea|topic)|key (point|takeaway)|explain (this|the|everything|it all)|what(?:'s| is| are)?\b[^?]*\b(this|it|the (doc|document|file|video|recording|dashboard))\b[^?]*\b(about|do|cover|contain)|what is this/i.test(q || "")
 
   // Answer a question: retrieve relevant segments, ground the LLM, return answer + sources.
   const ask = useCallback(async (question, aiMode, model, onStatus) => {
@@ -67,6 +67,22 @@ export default function useRAG() {
       .sort((a, b) => b.score - a.score)
 
     const overview = isOverviewQuestion(question)
+
+    // If even the best match is weak, the document almost certainly doesn't
+    // cover this. Don't force a useless "not covered" generation — tell the UI
+    // so it can offer the AI's general knowledge or a web search instead.
+    const TOP_SCORE_MIN = 0.32
+    if (!overview && (scored[0]?.score ?? 0) < TOP_SCORE_MIN) {
+      return {
+        answer: null,
+        notFound: true,
+        sources: scored.slice(0, 3).map((r) => ({
+          label: r.doc.label, timestamp: r.doc.timestamp, frame: r.doc.frame || null,
+          text: (r.doc.text || (typeof r.doc.annotation === "string" ? r.doc.annotation : "") || "").slice(0, 600),
+        })),
+      }
+    }
+
     let picked
     if (overview) {
       // Spread excerpts across the whole document so a summary covers everything:
@@ -119,8 +135,19 @@ ${context}`
       frame: d.frame || null,
       text: (d.text || (typeof d.annotation === "string" ? d.annotation : "") || d.ocrText || "").slice(0, 600),
     }))
-    return { answer, sources }
+    return { answer, sources, notFound: false }
   }, [embed])
 
-  return { buildIndex, ask, isReady }
+  // Answer from the model's own general knowledge (not the document). Used when
+  // the document doesn't cover the question and the user opts in.
+  const askGeneral = useCallback(async (question, aiMode, model, onStatus) => {
+    const system = `You are a helpful technical assistant. Answer the user's question from your own general knowledge. The user's uploaded document does not cover this topic, so do not refer to it or claim it does. Be concise, accurate and practical, with clear steps where useful. If you are genuinely unsure, say so.`
+    onStatus?.("Answering from the AI model...", null, "write")
+    const answer = aiMode === "ollama"
+      ? await callOllama(question, system, model, { maxTokens: 500 })
+      : await callWebLLM(question, system, onStatus, { maxTokens: 500, model })
+    return answer
+  }, [])
+
+  return { buildIndex, ask, askGeneral, isReady }
 }

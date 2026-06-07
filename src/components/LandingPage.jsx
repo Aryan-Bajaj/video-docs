@@ -153,7 +153,7 @@ const FEATURES = [
   {
     icon: '💬',
     title: 'Vid Chat',
-    desc: 'Ask your recording anything. In-browser RAG retrieves the right step and answers, with the matching frame and a jump-to-moment link. No server, no keys.',
+    desc: 'Ask your recording anything. In-browser RAG retrieves the right step and answers, with the matching frame and a jump-to-moment link. Not in the doc? It offers the AI model or a real web search. No server, no keys.',
     color: '#34d399',
   },
   {
@@ -630,7 +630,7 @@ export default function LandingPage() {
               <span style={{ background: 'linear-gradient(90deg, #34d399, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Vid Chat it.</span>
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.05rem', maxWidth: 640, margin: '0 auto', lineHeight: 1.7 }}>
-              Once your guide is built, ask it anything. It finds the exact step, answers in plain language, and shows you the matching frame with a jump-to-moment link. Embeddings and retrieval run entirely in your browser, no server, no API keys.
+              Once your guide is built, ask it anything. It finds the exact step, answers in plain language, and shows you the matching frame with a jump-to-moment link. Embeddings and retrieval run entirely in your browser, no server, no API keys. And if something is not in your document, it tells you honestly, then offers the AI model's own knowledge or a real web search with sources.
             </p>
           </div>
           <DocChatDemo />

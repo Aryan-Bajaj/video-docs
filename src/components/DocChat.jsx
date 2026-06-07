@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react"
 import useRAG from "../hooks/useRAG"
-import { MessageSquare, Send, CornerDownRight } from "lucide-react"
+import { MessageSquare, Send, CornerDownRight, Sparkles, Globe } from "lucide-react"
 
 function fmt(ts) {
   if (ts == null) return ""
@@ -38,7 +38,7 @@ function Progress({ status }) {
 }
 
 export default function DocChat({ docs, aiMode, ollamaModel, onSeek, autoStart = false }) {
-  const { buildIndex, ask, isReady } = useRAG()
+  const { buildIndex, ask, askGeneral, isReady } = useRAG()
   const [open, setOpen] = useState(autoStart)
   const [ready, setReady] = useState(false)
   const [status, setStatus] = useState(null) // { label, pct, phase } | null
@@ -87,13 +87,33 @@ export default function DocChat({ docs, aiMode, ollamaModel, onSeek, autoStart =
     setMessages((m) => [...m, { q, a: null, sources: [] }])
     try {
       await ensureIndex()
-      const { answer, sources } = await ask(q, aiMode || "webllm", ollamaModel, onStatus)
-      setMessages((m) => m.map((x, i) => i === m.length - 1 ? { ...x, a: answer, sources } : x))
+      const { answer, sources, notFound } = await ask(q, aiMode || "webllm", ollamaModel, onStatus)
+      setMessages((m) => m.map((x, i) => i === m.length - 1 ? { ...x, a: answer, sources, notFound: !!notFound, query: q } : x))
     } catch (e) {
       setMessages((m) => m.map((x, i) => i === m.length - 1 ? { ...x, a: `⚠️ ${e.message}` } : x))
     } finally {
       setBusy(false); setStatus(null)
     }
+  }
+
+  // Document doesn't cover it → answer from the model's own general knowledge.
+  const answerFromAI = async (idx, q) => {
+    if (busy) return
+    setBusy(true)
+    setMessages((m) => m.map((x, i) => i === idx ? { ...x, notFound: false } : x))
+    try {
+      const a = await askGeneral(q, aiMode || "webllm", ollamaModel, onStatus)
+      setMessages((m) => m.map((x, i) => i === idx ? { ...x, a, sources: [], general: true } : x))
+    } catch (e) {
+      setMessages((m) => m.map((x, i) => i === idx ? { ...x, a: `⚠️ ${e.message}`, notFound: true } : x))
+    } finally {
+      setBusy(false); setStatus(null)
+    }
+  }
+
+  // Hand off to a real web search (real sources, opens in a new tab).
+  const searchWeb = (q) => {
+    window.open(`https://www.perplexity.ai/search?q=${encodeURIComponent(q)}`, "_blank", "noopener,noreferrer")
   }
 
   if (!docs?.length) return null
@@ -130,10 +150,32 @@ export default function DocChat({ docs, aiMode, ollamaModel, onSeek, autoStart =
           return (
             <div key={i} className="space-y-2">
               <div className="text-sm text-zinc-100"><span className="text-emerald-400 font-semibold">You: </span>{m.q}</div>
-              {m.a == null ? (
-                <Progress status={isLast && busy ? (status ?? { label: "Thinking...", pct: null, phase: null }) : { label: "Thinking...", pct: null, phase: null }} />
+              {m.a != null ? (
+                <div className="space-y-1.5">
+                  {m.general && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-amber-300">
+                      <Sparkles className="w-3 h-3" /> From the AI model's general knowledge, not your document
+                    </div>
+                  )}
+                  <div className="text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5">{m.a}</div>
+                </div>
+              ) : m.notFound ? (
+                <div className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-3 space-y-2.5">
+                  <p className="text-sm text-zinc-200">I couldn't find this in your document.</p>
+                  <p className="text-xs text-zinc-500">Want an answer anyway?</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => answerFromAI(i, m.query)} disabled={busy}
+                      className="flex items-center gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-lg px-3 py-1.5 transition-colors">
+                      <Sparkles className="w-3.5 h-3.5" /> Answer from the AI's knowledge
+                    </button>
+                    <button onClick={() => searchWeb(m.query)}
+                      className="flex items-center gap-1.5 text-xs border border-zinc-600 hover:border-emerald-500 hover:text-emerald-300 text-zinc-300 rounded-lg px-3 py-1.5 transition-colors">
+                      <Globe className="w-3.5 h-3.5" /> Search the web ↗
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <div className="text-sm text-zinc-100 whitespace-pre-wrap leading-relaxed bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5">{m.a}</div>
+                <Progress status={isLast && busy ? (status ?? { label: "Thinking...", pct: null, phase: null }) : { label: "Thinking...", pct: null, phase: null }} />
               )}
               {m.sources?.length > 0 && (
                 <div className="space-y-2 pt-1">

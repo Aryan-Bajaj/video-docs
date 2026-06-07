@@ -28,14 +28,14 @@
    - [Module 9: Vid Chat (in-browser RAG)](#module-9-vid-chat-in-browser-rag) `🆕 v2`
    - [Module 10: Doc Chat app](#module-10-doc-chat-app) `🆕 v2`
 6. [Repository Structure](#-repository-structure)
-6. [Tech Stack](#-tech-stack)
-7. [Getting Started](#-getting-started)
-8. [Deploying to Netlify](#-deploying-to-netlify)
-9. [Privacy: Where Does Your Data Go?](#-privacy-where-does-your-data-go)
-10. [Customisation](#-customisation)
-11. [License Notes](#-license-notes)
-12. [Author](#-author)
-13. [License](#-license)
+7. [Tech Stack](#-tech-stack)
+8. [Getting Started](#-getting-started)
+9. [Deploying to Netlify](#-deploying-to-netlify)
+10. [Privacy: Where Does Your Data Go?](#-privacy-where-does-your-data-go)
+11. [Customisation](#-customisation)
+12. [License Notes](#-license-notes)
+13. [Author](#-author)
+14. [License](#-license)
 
 ---
 

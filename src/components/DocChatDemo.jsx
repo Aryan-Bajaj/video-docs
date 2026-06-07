@@ -27,7 +27,7 @@ export default function DocChatDemo() {
         {/* header */}
         <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.2)' }}>
           <span style={{ fontSize: 14 }}>💬</span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#86efac', letterSpacing: '0.02em' }}>Talk to your documentation</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#86efac', letterSpacing: '0.02em' }}>Vid Chat</span>
           <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>in-browser · cites the step</span>
         </div>
 

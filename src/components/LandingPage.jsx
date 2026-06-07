@@ -143,8 +143,8 @@ const FEATURES = [
   },
   {
     icon: '💬',
-    title: 'Talk to Your Documentation',
-    desc: 'Ask your guide anything. In-browser RAG retrieves the right step and answers, with the matching frame and a jump-to-moment link. No server, no keys.',
+    title: 'Vid Chat',
+    desc: 'Ask your recording anything. In-browser RAG retrieves the right step and answers, with the matching frame and a jump-to-moment link. No server, no keys.',
     color: '#34d399',
   },
   {
@@ -166,6 +166,7 @@ const STEPS = [
   { num: '02', label: 'Whisper Transcribes',   icon: '🎧', color: '#a78bfa' },
   { num: '03', label: 'AI Writes the Steps',   icon: '✍️',  color: '#06b6d4' },
   { num: '04', label: 'Export & Publish',       icon: '🚀', color: '#fbbf24' },
+  { num: '05', label: 'Vid Chat',               icon: '💬', color: '#34d399' },
 ]
 
 export default function LandingPage() {
@@ -350,7 +351,7 @@ export default function LandingPage() {
             {[
               { icon: '🎬', label: 'Record', c: '#3f62ff' },
               { icon: '📄', label: 'Document', c: '#a78bfa' },
-              { icon: '💬', label: 'Ask your doc', c: '#34d399' },
+              { icon: '💬', label: 'Vid Chat', c: '#34d399' },
             ].map((s, i) => (
               <span key={i} style={{ display: 'contents' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 15px', borderRadius: 100, background: `${s.c}14`, border: `1px solid ${s.c}3a`, color: s.c, fontSize: '0.85rem', fontWeight: 600 }}>
@@ -586,11 +587,11 @@ export default function LandingPage() {
         <section className="lp-section" style={{ padding: '90px 24px', maxWidth: 1000, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 44 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#34d399', marginBottom: 12 }}>
-              New · Retrieval-Augmented Chat
+              New · Vid Chat
             </div>
             <h2 style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3rem)', fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 14 }}>
-              Don't just read the doc.{' '}
-              <span style={{ background: 'linear-gradient(90deg, #34d399, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Ask it.</span>
+              Don't just read it.{' '}
+              <span style={{ background: 'linear-gradient(90deg, #34d399, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Vid Chat it.</span>
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.05rem', maxWidth: 640, margin: '0 auto', lineHeight: 1.7 }}>
               Once your guide is built, ask it anything. It finds the exact step, answers in plain language, and shows you the matching frame with a jump-to-moment link. Embeddings and retrieval run entirely in your browser, no server, no API keys.
@@ -615,7 +616,7 @@ export default function LandingPage() {
             </span>
           </h2>
           <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.45)', marginBottom: 60 }}>
-            VideoDoc handles the transcription, the structure, and the formatting. You focus on the content.
+            VideoDoc handles the transcription, the structure, and the formatting. You focus on the content, then ask Vid Chat anything about the recording.
           </p>
 
           <div style={{ position: 'relative' }}>
@@ -702,8 +703,8 @@ export default function LandingPage() {
                   chips: [{ label: 'Step GIFs', c: '#fbbf24' }, { label: 'PDF / DOCX', c: '#a78bfa' }],
                 },
                 {
-                  icon: '💬', color: '#34d399', num: '05', title: 'Ask Your Docs',
-                  desc: 'Talk to your documentation. In-browser RAG finds the right step and answers with the matching frame.',
+                  icon: '💬', color: '#34d399', num: '05', title: 'Vid Chat',
+                  desc: 'Ask your recording anything. In-browser RAG finds the right step and answers with the matching frame.',
                   chips: [{ label: 'RAG chat', c: '#34d399' }, { label: 'Cites the step', c: '#22d3ee' }],
                 },
               ].map((node, i) => (

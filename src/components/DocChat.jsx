@@ -55,7 +55,7 @@ export default function DocChat({ docs, aiMode, ollamaModel, onSeek }) {
       <button onClick={handleOpen}
         className="w-full border border-emerald-700/40 bg-emerald-500/5 hover:bg-emerald-500/10 rounded-xl px-4 py-3 flex items-center gap-3 transition-all">
         <MessageSquare className="w-4 h-4 text-emerald-400" />
-        <span className="text-sm font-medium text-emerald-300">Talk to your documentation</span>
+        <span className="text-sm font-medium text-emerald-300">Vid Chat</span>
         <span className="text-xs text-zinc-500 ml-auto">Ask anything · answers cite the exact step</span>
       </button>
     )
@@ -65,7 +65,7 @@ export default function DocChat({ docs, aiMode, ollamaModel, onSeek }) {
     <div className="border border-zinc-800 rounded-xl overflow-hidden flex flex-col" style={{ maxHeight: 520 }}>
       <div className="px-4 py-3 border-b border-zinc-800 flex items-center gap-2 bg-black/20">
         <MessageSquare className="w-4 h-4 text-emerald-400" />
-        <span className="text-sm font-semibold">Talk to your documentation</span>
+        <span className="text-sm font-semibold">Vid Chat</span>
         {status && <span className="text-xs text-emerald-400 ml-auto truncate max-w-[50%]">{status}</span>}
       </div>
 

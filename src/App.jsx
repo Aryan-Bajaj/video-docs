@@ -263,10 +263,18 @@ export default function App() {
               frames={frames}
             />
 
-            {annotatedDocs.length > 0 && (
+            {(annotatedDocs.length > 0 || transcriptChunks.length > 0) && (
               <DocChat
-                docs={annotatedDocs}
-                aiMode={aiMode}
+                docs={annotatedDocs.length > 0 ? annotatedDocs : transcriptChunks.map(c => {
+                  const ts = c.timestamp?.[0] ?? 0
+                  const m = Math.floor(ts / 60).toString().padStart(2, "0")
+                  const s = Math.floor(ts % 60).toString().padStart(2, "0")
+                  const fr = frames.length
+                    ? frames.reduce((b, f) => Math.abs(f.timestamp - ts) < Math.abs(b.timestamp - ts) ? f : b, frames[0])
+                    : null
+                  return { label: `${m}:${s}`, text: c.text, timestamp: ts, frame: fr?.imageData ?? null, annotation: null }
+                })}
+                aiMode={aiMode || "webllm"}
                 ollamaModel={aiModel}
                 onSeek={handleDocSeek}
               />

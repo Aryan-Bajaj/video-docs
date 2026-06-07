@@ -36,9 +36,12 @@ Rules:
 
 // Context block fed to the model per window, now including on-screen (OCR) text.
 export function buildContextPrompt(text, label, prevText, nextText, ocrText) {
+  const spoken = text
+    ? `[Spoken at ${label}]: "${text}"`
+    : `[At ${label}]: (no narration here — describe the action purely from the on-screen text)`
   return [
     prevText ? `[Previous]: "${prevText}"` : null,
-    `[Spoken at ${label}]: "${text}"`,
+    spoken,
     nextText ? `[Next]: "${nextText}"` : null,
     ocrText ? `[On-screen text (OCR)]: "${ocrText}"` : null,
   ].filter(Boolean).join('\n')

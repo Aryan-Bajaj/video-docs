@@ -87,6 +87,7 @@ const CSS = `
     .lp-export-grid { grid-template-columns: 1fr !important; }
     .lp-v-split     { grid-template-columns: 1fr !important; }
     .lp-v-split > div:last-child { display: none !important; }
+    .lp-pipe-grid   { grid-template-columns: repeat(2, 1fr) !important; gap: 20px !important; }
   }
 `
 
@@ -340,8 +341,25 @@ export default function LandingPage() {
             maxWidth: 540, lineHeight: 1.75, marginBottom: 52,
           }}>
             VideoDoc watches your screen recording, writes the steps, captures the frames,
-            and hands you a polished guide. No internet connection, no account, no subscription.
+            and hands you a polished guide. Then you can talk to that guide and ask it anything.
+            No internet connection, no account, no subscription.
           </p>
+
+          {/* Flow chips: Record → Document → Ask */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 40 }}>
+            {[
+              { icon: '🎬', label: 'Record', c: '#3f62ff' },
+              { icon: '📄', label: 'Document', c: '#a78bfa' },
+              { icon: '💬', label: 'Ask your doc', c: '#34d399' },
+            ].map((s, i) => (
+              <span key={i} style={{ display: 'contents' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 15px', borderRadius: 100, background: `${s.c}14`, border: `1px solid ${s.c}3a`, color: s.c, fontSize: '0.85rem', fontWeight: 600 }}>
+                  <span style={{ fontSize: 15 }}>{s.icon}</span>{s.label}
+                </span>
+                {i < 2 && <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 14 }}>→</span>}
+              </span>
+            ))}
+          </div>
 
           {/* CTAs */}
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -661,7 +679,7 @@ export default function LandingPage() {
               pointerEvents: 'none',
             }} />
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+            <div className="lp-pipe-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
               {[
                 {
                   icon: '🎬', color: '#3f62ff', num: '01', title: 'Upload Video',
@@ -669,19 +687,24 @@ export default function LandingPage() {
                   chips: [{ label: '0 bytes sent', c: '#3f62ff' }, { label: 'Browser only', c: '#06b6d4' }],
                 },
                 {
-                  icon: '⚙️', color: '#a78bfa', num: '02', title: 'Extract',
-                  desc: 'Frames every 5s. Audio resampled to 16kHz mono.',
-                  chips: [{ label: 'In-memory', c: '#a78bfa' }, { label: 'No disk write', c: '#06b6d4' }],
+                  icon: '👁', color: '#22d3ee', num: '02', title: 'Extract + Read Screen',
+                  desc: 'Frames and audio pulled out, then OCR reads the on-screen text and detects the tools you used.',
+                  chips: [{ label: 'Tools detected', c: '#22d3ee' }, { label: 'In-memory', c: '#a78bfa' }],
                 },
                 {
-                  icon: '🎧', color: '#06b6d4', num: '03', title: 'Whisper Transcribes',
-                  desc: 'Runs in a Web Worker. Model cached after first download.',
-                  chips: [{ label: '~95% accuracy', c: '#06b6d4' }, { label: 'Fully offline', c: '#3f62ff' }],
+                  icon: '🎧', color: '#06b6d4', num: '03', title: 'Transcribe + Chunk',
+                  desc: 'Whisper runs in a Web Worker. Long transcripts are grouped into windows for fast, coherent passes.',
+                  chips: [{ label: '~95% accuracy', c: '#06b6d4' }, { label: 'Long-video ready', c: '#3f62ff' }],
                 },
                 {
                   icon: '🚀', color: '#fbbf24', num: '04', title: 'Export',
-                  desc: 'HTML, PDF, or DOCX generated locally in your tab.',
-                  chips: [{ label: 'HTML animated', c: '#fbbf24' }, { label: 'PDF / DOCX', c: '#a78bfa' }],
+                  desc: 'HTML guide with animated step GIFs, plus clean PDF and DOCX, all generated locally.',
+                  chips: [{ label: 'Step GIFs', c: '#fbbf24' }, { label: 'PDF / DOCX', c: '#a78bfa' }],
+                },
+                {
+                  icon: '💬', color: '#34d399', num: '05', title: 'Ask Your Docs',
+                  desc: 'Talk to your documentation. In-browser RAG finds the right step and answers with the matching frame.',
+                  chips: [{ label: 'RAG chat', c: '#34d399' }, { label: 'Cites the step', c: '#22d3ee' }],
                 },
               ].map((node, i) => (
                 <div key={i} style={{
@@ -812,12 +835,12 @@ export default function LandingPage() {
                   }}>NO INSTALL</span>
                 </div>
                 <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 16 }}>
-                  Ollama not found? VideoDoc loads <code style={{ fontSize: 11, background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: 4 }}>Llama-3.2-1B</code> directly
-                  in your browser via WebGPU. Nothing to install, but needs a WebGPU-capable browser (Chrome 113+).
+                  No Ollama? VideoDoc loads <code style={{ fontSize: 11, background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: 4 }}>Llama-3.2-3B</code> directly
+                  in your browser via WebGPU (falls back to 1B). Nothing to install, but needs a WebGPU-capable browser (Chrome 113+).
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
-                    { label: 'Output quality', val: 72, color: '#a78bfa', note: 'smaller model' },
+                    { label: 'Output quality', val: 82, color: '#a78bfa', note: '3B model' },
                     { label: 'Privacy',         val: 100, color: '#22c55e' },
                     { label: 'Speed',           val: 55, color: '#fbbf24', note: 'GPU-dependent' },
                   ].map((bar, i) => (
@@ -889,6 +912,47 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* ── First-run downloads ──────────────────────────────── */}
+        <section className="lp-section" style={{ padding: '70px 24px 90px', maxWidth: 1000, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#7b96ff', marginBottom: 12 }}>
+              One-time setup
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 4.2vw, 2.8rem)', fontWeight: 700, letterSpacing: '-0.025em', marginBottom: 14 }}>
+              What downloads the{' '}
+              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>first time</span>
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.02rem', maxWidth: 660, margin: '0 auto', lineHeight: 1.7 }}>
+              Because everything runs on your machine instead of a server, the AI models download once on first use, then stay cached in your browser. Every run after that is instant and fully offline.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            {[
+              { icon: '🎧', name: 'Whisper (speech to text)', size: '~150 MB', when: 'When you upload your first video', color: '#06b6d4' },
+              { icon: '🧠', name: 'WebLLM (writes the steps)', size: '~2 GB · 3B', when: 'First annotation in browser mode. ~0.9 GB for the 1B fallback', color: '#a78bfa' },
+              { icon: '💬', name: 'Embeddings (doc chat)', size: '~90 MB', when: 'First time you ask your documentation a question', color: '#34d399' },
+              { icon: '👁', name: 'OCR (reads the screen)', size: '~12 MB', when: 'When screen text is read off the frames', color: '#22d3ee' },
+            ].map((m, i) => (
+              <div key={i} style={{ borderRadius: 16, padding: '24px 22px', background: 'rgba(28,18,55,0.6)', border: `1px solid ${m.color}30`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+                <div style={{ fontSize: 30, marginBottom: 12, filter: `drop-shadow(0 0 8px ${m.color})` }}>{m.icon}</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', marginBottom: 6 }}>{m.name}</div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 800, color: m.color, letterSpacing: '-0.02em', marginBottom: 8 }}>{m.size}</div>
+                <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.55, margin: 0 }}>{m.when}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 22, display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+            {['Downloaded once', 'Cached in your browser', 'Instant after first run', 'Skip WebLLM with Ollama'].map((t, i) => (
+              <span key={i} style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', padding: '6px 14px', borderRadius: 100, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>✓ {t}</span>
+            ))}
+          </div>
+          <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'rgba(255,255,255,0.38)', marginTop: 18, maxWidth: 680, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+            Tip: tech users can run Ollama instead of WebLLM, which skips the ~2 GB browser model and gives stronger results.
+          </p>
         </section>
 
         {/* ── V1 → V2 comparison split ─────────────────────────── */}

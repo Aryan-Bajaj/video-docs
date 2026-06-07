@@ -103,10 +103,10 @@ export function exportHTML(docs, videoName, allFrames, meta = {}) {
 
   // Timeline (process steps)
   const timelineItems = docs.map((doc, i) => {
-    const sections = doc.sectionedAnnotation || parseDefaultSections(doc.annotation)
+    const sections = doc.sectionedAnnotation || null
     const heading = sections
       ? Object.values(sections)[0]?.split(/[.!?]/)[0]?.trim()
-      : doc.annotation?.split(/[.!?]/)[0]?.trim() || doc.text.slice(0, 60).trim()
+      : (doc.annotation?.split(/[.!?]/)[0]?.trim() || doc.text?.slice(0, 60).trim() || doc.label)
     return `
     <div class="tl-step reveal" style="transition-delay:${Math.min(i * 0.04, 0.4)}s">
       <div class="tl-dot">${i + 1}</div>

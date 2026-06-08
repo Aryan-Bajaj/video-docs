@@ -60,12 +60,6 @@ It works for:
 
 And the best part? **Everything runs in your browser.** No API keys. No cloud. No privacy trade-offs.
 
-## 🎥 See it in action
-
-[![Watch the VideoDoc demo](assets/demo-poster.png)](assets/VideoDoc-demo.mp4)
-
-A short tour: the site, a real video turning into a step by step guide, the exported HTML guide, the model picker, and a live chat that answers from your document or says so honestly when it cannot. Click the image above to play.
-
 P.S. — This is Version 2. I’m currently working on Version 3 to improve the overall documentation quality.
 ---
 

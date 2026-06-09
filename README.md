@@ -541,6 +541,8 @@ In `src/components/LandingPage.jsx`, find the `window.VANTA.NET({...})` call and
 * Summary-aware answers that cover the whole document `🆕 v2`
 * Honest web fallback: if the doc lacks the answer, get the AI model's general knowledge or a real web search `🆕 v2`
 * Doc Chat app: upload any document and chat with it, processing starts on upload `🆕 v2`
+* Export to HTML, PDF or DOCX
+* 100% in the browser, private, no API keys, no servers
 
 ---
 
@@ -576,5 +578,3 @@ VideoDoc is a browser-based productivity tool. Transcription accuracy depends on
 MIT License. See [LICENSE](LICENSE) for details.
 
 ---
-* Export to HTML, PDF or DOCX
-* 100% in the browser, private, no API keys, no servers

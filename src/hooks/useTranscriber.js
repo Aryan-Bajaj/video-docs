@@ -18,7 +18,7 @@ export default function useTranscriber() {
         if (data.type === 'status') {
           setTranscribeStatus(data.msg)
         } else if (data.type === 'progress') {
-          setTranscribeProgress({ stage: data.stage, pct: data.pct, file: data.file })
+          setTranscribeProgress({ stage: data.stage, pct: data.pct, file: data.file, window: data.window, windows: data.windows })
         } else if (data.type === 'result') {
           setTranscribeProgress(null)
           setTranscribeStatus(null)
@@ -34,5 +34,10 @@ export default function useTranscriber() {
     })
   }, [])
 
-  return { transcribe, transcribeStatus, transcribeProgress }
+  // Ask the worker to stop after the current 5-minute window (cooperative cancel).
+  const cancelTranscribe = useCallback(() => {
+    workerRef.current?.postMessage({ type: 'cancel' })
+  }, [])
+
+  return { transcribe, cancelTranscribe, transcribeStatus, transcribeProgress }
 }

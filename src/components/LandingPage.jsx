@@ -95,7 +95,6 @@ const CSS = `
     .lp-fork-grid   { grid-template-columns: 1fr !important; }
     .lp-export-grid { grid-template-columns: 1fr !important; }
     .lp-v-split     { grid-template-columns: 1fr !important; }
-    .lp-v-split > div:last-child { display: none !important; }
     .lp-pipe-grid   { grid-template-columns: repeat(2, 1fr) !important; gap: 20px !important; }
   }
 `
@@ -134,21 +133,27 @@ const PERSONAS = [
 const FEATURES = [
   {
     icon: '🎙',
-    title: 'Browser-native Transcription',
-    desc: "The same Whisper model powering industry tools, running via WebAssembly right in your tab. No API key, no rate limits, no cost per minute.",
+    title: 'Accurate Transcription',
+    desc: 'Whisper Small runs via WebAssembly right in your tab, sharp enough to get names, jargon and technical terms right. No API key, no rate limits, no cost per minute.',
     color: '#3f62ff',
   },
   {
     icon: '👁',
-    title: 'Reads Your Screen (OCR)',
-    desc: 'On-screen text is read straight off the frames, so steps name the exact buttons, menus and files, and the tools you used (Excel, VBA, SAP…) are detected automatically.',
+    title: 'Sees Your Screen (Vision)',
+    desc: 'The AI looks at the actual screenshots, not just OCR text, so it names the exact buttons, menus and tabs, and works out "click here" by seeing where you clicked.',
     color: '#22d3ee',
   },
   {
-    icon: '🎞',
-    title: 'Animated Step GIFs',
-    desc: 'Every step becomes a smooth ±3-second GIF of the actual action, not a frozen screenshot. Built in your browser, embedded right into the HTML guide.',
+    icon: '🎬',
+    title: 'Sharp Step Clips',
+    desc: 'Every step becomes a short, true-colour WebM clip of the real action. It is far clearer than a GIF, and smaller too. Built in your browser, embedded right into the HTML guide.',
     color: '#f472b6',
+  },
+  {
+    icon: '📋',
+    title: 'A Real Desktop Procedure',
+    desc: 'Not loose notes, but a structured SOP: Index, Purpose, Prerequisites, numbered steps (action, result, screenshot), Key Observations, Summary, FAQ and a flow diagram.',
+    color: '#a78bfa',
   },
   {
     icon: '💬',
@@ -157,15 +162,9 @@ const FEATURES = [
     color: '#34d399',
   },
   {
-    icon: '🧩',
-    title: 'Handles Long Videos',
-    desc: 'Smart chunking groups the transcript into windows, so a long recording is summarised in a handful of focused passes instead of hundreds.',
-    color: '#a78bfa',
-  },
-  {
     icon: '🔒',
     title: 'Runs Fully in Your Browser',
-    desc: 'Whisper, OCR, the LLM, embeddings and GIFs, all client-side. Optional Ollama for power users; zero data leaves your machine. Ever.',
+    desc: 'Whisper, Vision, the LLM, embeddings and clips, all client-side. Optional Ollama for power users, and zero data leaves your machine. Ever.',
     color: '#fbbf24',
   },
 ]
@@ -433,8 +432,8 @@ export default function LandingPage() {
           }}>
             {[
               { value: '0 bytes', label: 'sent to any server', color: '#3f62ff' },
-              { value: '~95%',    label: 'transcription accuracy', color: '#a78bfa' },
-              { value: '150MB',   label: 'model, cached after first run', color: '#06b6d4' },
+              { value: '~96%',    label: 'transcript accuracy (Whisper Small)', color: '#a78bfa' },
+              { value: 'Offline', label: 'after a one-time model download', color: '#06b6d4' },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{
@@ -724,19 +723,19 @@ export default function LandingPage() {
                   chips: [{ label: '0 bytes sent', c: '#3f62ff' }, { label: 'Browser only', c: '#06b6d4' }],
                 },
                 {
-                  icon: '👁', color: '#22d3ee', num: '02', title: 'Extract + Read Screen',
-                  desc: 'Frames and audio pulled out, then OCR reads the on-screen text and detects the tools you used.',
-                  chips: [{ label: 'Tools detected', c: '#22d3ee' }, { label: 'In-memory', c: '#a78bfa' }],
+                  icon: '👁', color: '#22d3ee', num: '02', title: 'Extract + See Screen',
+                  desc: 'Frames and audio pulled out, then the AI reads the screen with Vision or OCR, naming exact elements and detecting the tools you used.',
+                  chips: [{ label: 'Vision / OCR', c: '#22d3ee' }, { label: 'Tools detected', c: '#a78bfa' }],
                 },
                 {
                   icon: '🎧', color: '#06b6d4', num: '03', title: 'Transcribe + Chunk',
-                  desc: 'Whisper runs in a Web Worker. Long transcripts are grouped into windows for fast, coherent passes.',
-                  chips: [{ label: '~95% accuracy', c: '#06b6d4' }, { label: 'Long-video ready', c: '#3f62ff' }],
+                  desc: 'Whisper Small runs in a Web Worker. Long transcripts are grouped into windows for fast, coherent passes.',
+                  chips: [{ label: '~96% accuracy', c: '#06b6d4' }, { label: 'Long-video ready', c: '#3f62ff' }],
                 },
                 {
                   icon: '🚀', color: '#fbbf24', num: '04', title: 'Export',
-                  desc: 'HTML guide with animated step GIFs, plus clean PDF and DOCX, all generated locally.',
-                  chips: [{ label: 'Step GIFs', c: '#fbbf24' }, { label: 'PDF / DOCX', c: '#a78bfa' }],
+                  desc: 'A full Desktop Procedure: HTML with sharp WebM step clips, plus clean PDF and DOCX, all generated locally.',
+                  chips: [{ label: 'Step clips', c: '#fbbf24' }, { label: 'PDF / DOCX', c: '#a78bfa' }],
                 },
                 {
                   icon: '💬', color: '#34d399', num: '05', title: 'Vid Chat',
@@ -822,7 +821,7 @@ export default function LandingPage() {
                 <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 16 }}>
                   VideoDoc pings <code style={{ fontSize: 11, background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: 4 }}>localhost:11434</code> at startup.
                   If Ollama is running, it auto-lists your installed models.
-                  Best results with Llama 3.2 or Mistral 7B.
+                  Best results with a vision model like gemma3, so the AI can see the screen.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
@@ -872,14 +871,15 @@ export default function LandingPage() {
                   }}>NO INSTALL</span>
                 </div>
                 <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 14 }}>
-                  No Ollama? VideoDoc runs the model right in your browser via WebGPU. You pick the model yourself, with accuracy and speed shown up front, so nothing changes behind your back. Needs a WebGPU browser (Chrome 113+).
+                  No Ollama? VideoDoc runs the model right in your browser via WebGPU, including a Vision model that reads the screen. You pick the model yourself, with accuracy and speed shown up front, so nothing changes behind your back. Needs a WebGPU browser (Chrome 113+).
                 </p>
                 {/* In-browser model picker — user chooses speed vs accuracy */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
                   {[
-                    { label: 'Fast · 1B',     size: '~0.9 GB', acc: 'Good',   eta: '10 to 30s', tag: 'Default' },
-                    { label: 'Balanced · 1.5B', size: '~1.3 GB', acc: 'Better', eta: '20 to 50s' },
-                    { label: 'Quality · 3B',  size: '~2.2 GB', acc: 'Best',   eta: '40s to 2m' },
+                    { label: 'Fast · 1B',     size: '~0.9 GB', acc: 'Good',   eta: '10 to 30s' },
+                    { label: 'Balanced · 3B', size: '~2.2 GB', acc: 'Strong', eta: '30s to 1m', tag: 'Default' },
+                    { label: 'Max · 7B',      size: '~5.5 GB', acc: 'Best',   eta: '1 to 3m' },
+                    { label: 'Vision · 4.2B', size: '~3.5 GB', acc: 'Sees screen', eta: '1 to 3m', tag: 'New' },
                   ].map((m, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(167,139,250,0.18)' }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{m.label}</span>
@@ -930,7 +930,7 @@ export default function LandingPage() {
                 {[
                   {
                     icon: '🌐', label: 'HTML Guide', color: '#06b6d4',
-                    features: ['Animated step reveals', 'Embedded video frames', 'Scroll progress bar', 'Printable + shareable'],
+                    features: ['Index, steps, FAQ & flow', 'Sharp WebM step clips', 'Scroll progress bar', 'Printable + shareable'],
                   },
                   {
                     icon: '📄', label: 'PDF', color: '#a78bfa',
@@ -981,10 +981,11 @@ export default function LandingPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
             {[
-              { icon: '🎧', name: 'Whisper (speech to text)', size: '~150 MB', when: 'When you upload your first video', color: '#06b6d4' },
-              { icon: '🧠', name: 'WebLLM (writes the steps)', size: '~0.9 to 2.2 GB', when: 'First annotation in browser mode. You pick the model: 1B (Fast), 1.5B (Balanced) or 3B (Quality)', color: '#a78bfa' },
+              { icon: '🎙', name: 'Whisper Small (speech to text)', size: '~970 MB', when: 'On your first video. The more accurate model that nails names and jargon.', color: '#06b6d4' },
+              { icon: '🧠', name: 'WebLLM (writes the steps)', size: '~2.2 to 5.5 GB', when: 'First annotation in browser mode. Pick Balanced (Qwen2.5-3B, default), Quality (Phi-3.5) or Max (Qwen2.5-7B)', color: '#a78bfa' },
+              { icon: '👁', name: 'Vision model (optional)', size: '~3.5 GB', when: 'Browser Vision mode, where the AI sees the screen (Phi-3.5-Vision). With Ollama, gemma3 does this, no download.', color: '#7b96ff' },
               { icon: '💬', name: 'Embeddings (doc chat)', size: '~90 MB', when: 'First time you ask your documentation a question', color: '#34d399' },
-              { icon: '👁', name: 'OCR (reads the screen)', size: '~12 MB', when: 'When screen text is read off the frames', color: '#22d3ee' },
+              { icon: '🔤', name: 'OCR (reads the screen)', size: '~12 MB', when: 'Reads on-screen text from frames (used when not in Vision mode)', color: '#22d3ee' },
             ].map((m, i) => (
               <div key={i} style={{ borderRadius: 16, padding: '24px 22px', background: 'rgba(28,18,55,0.6)', border: `1px solid ${m.color}30`, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
                 <div style={{ fontSize: 30, marginBottom: 12, filter: `drop-shadow(0 0 8px ${m.color})` }}>{m.icon}</div>
@@ -1001,59 +1002,112 @@ export default function LandingPage() {
             ))}
           </div>
           <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'rgba(255,255,255,0.38)', marginTop: 18, maxWidth: 680, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
-            Tip: tech users can run Ollama instead of WebLLM, which skips the ~2 GB browser model and gives stronger results.
+            Tip: tech users can run Ollama instead of WebLLM. It skips the large browser download, runs Vision natively with gemma3, and gives the strongest results.
           </p>
         </section>
 
-        {/* ── V1 → V2 comparison split ─────────────────────────── */}
-        <section className="lp-section" style={{ padding: '90px 24px', maxWidth: 1000, margin: '0 auto' }}>
+        {/* ── V1 → V2 → V3 progression ─────────────────────────── */}
+        <section className="lp-section" style={{ padding: '90px 24px', maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 44 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fbbf24', marginBottom: 12 }}>
               How far it's come
             </div>
             <h2 style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3rem)', fontWeight: 700, letterSpacing: '-0.025em' }}>
-              <span style={{ color: 'rgba(255,255,255,0.4)' }}>v1</span>{' → '}
-              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>v2</span>
+              <span style={{ color: 'rgba(255,255,255,0.3)' }}>v1</span>{' → '}
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>v2</span>{' → '}
+              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #22d3ee, #a78bfa, #3f62ff)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>v3</span>
             </h2>
           </div>
 
-          <div className="lp-v-split" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, position: 'relative' }}>
+          <div className="lp-v-split" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
             {/* V1 */}
-            <div style={{ borderRadius: 18, padding: '28px 26px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 18 }}>v1 · the basics</div>
+            <div style={{ borderRadius: 18, padding: '24px 22px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.32)', marginBottom: 16 }}>v1 · the basics</div>
               {[
-                'Transcribe + frame every few seconds',
-                'One LLM call per tiny segment',
-                '3 static screenshots per step',
-                'Title = video file name',
-                'Read the doc, that\'s it',
-                'Audio-only understanding',
-              ].map((t, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', fontSize: '0.92rem', color: 'rgba(255,255,255,0.5)' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>•</span>{t}
+                ['📝', 'Transcribe + frame every few seconds'],
+                ['🔁', 'One LLM call per tiny segment'],
+                ['🖼', 'A few static screenshots per step'],
+                ['🏷', 'Title = the video file name'],
+                ['📄', 'Read the doc, that\'s it'],
+                ['🎧', 'Audio-only understanding'],
+              ].map(([ic, t], i) => (
+                <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '7px 0', fontSize: '0.86rem', color: 'rgba(255,255,255,0.42)' }}>
+                  <span style={{ flexShrink: 0, opacity: 0.55 }}>{ic}</span>{t}
                 </div>
               ))}
             </div>
 
             {/* V2 */}
-            <div style={{ borderRadius: 18, padding: '28px 26px', background: 'linear-gradient(160deg, rgba(63,98,255,0.1), rgba(34,211,238,0.05))', border: '1px solid rgba(63,98,255,0.3)', boxShadow: '0 0 40px rgba(63,98,255,0.12)' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7b96ff', marginBottom: 18 }}>v2 · now</div>
+            <div style={{ borderRadius: 18, padding: '24px 22px', background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginBottom: 16 }}>v2 · then</div>
               {[
-                ['🧩', 'Smart chunking, long videos in a few passes'],
-                ['👁', 'OCR reads the screen, exact names + tools detected'],
-                ['🎞', 'Animated step GIFs (±3s of the real action)'],
-                ['✍️', 'You name the guide, never the file name'],
-                ['💬', 'Talk to your docs, RAG chat with frame answers'],
-                ['🧠', 'Bigger browser model (Llama 3.2 3B) by default'],
+                ['🧩', 'Smart chunking for long videos'],
+                ['👁', 'OCR reads the on-screen text'],
+                ['🎞', 'Animated step GIFs'],
+                ['💬', 'RAG chat with your docs'],
+                ['🧠', 'Llama 3.2 3B browser model'],
+                ['🎧', 'Audio-only understanding'],
               ].map(([ic, t], i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', fontSize: '0.92rem', color: 'rgba(255,255,255,0.85)' }}>
-                  <span style={{ flexShrink: 0 }}>{ic}</span>{t}
+                <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '7px 0', fontSize: '0.86rem', color: 'rgba(255,255,255,0.62)' }}>
+                  <span style={{ flexShrink: 0, opacity: 0.7 }}>{ic}</span>{t}
                 </div>
               ))}
             </div>
 
-            {/* center arrow */}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 44, height: 44, borderRadius: '50%', background: '#0d0d2b', border: '1px solid rgba(63,98,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#7b96ff', boxShadow: '0 0 20px rgba(63,98,255,0.4)' }}>→</div>
+            {/* V3 */}
+            <div className="lp-card" style={{ position: 'relative', borderRadius: 18, padding: '24px 22px', background: 'linear-gradient(160deg, rgba(63,98,255,0.14), rgba(167,139,250,0.07))', border: '1px solid rgba(63,98,255,0.42)', animation: 'lp-pulse 4s ease-in-out infinite' }}>
+              <div style={{ position: 'absolute', top: -11, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', background: 'linear-gradient(135deg, #3f62ff, #a78bfa)', padding: '4px 11px', borderRadius: 100, animation: 'lp-badge-glow 2.6s ease-in-out infinite' }}>Biggest leap yet</div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9db0ff', marginBottom: 16 }}>v3 · now</div>
+              {[
+                ['👁', 'It sees the screen, not just OCR text'],
+                ['🎙', 'A far sharper transcript with Whisper Small'],
+                ['📋', 'A real Desktop Procedure (Index, Purpose, FAQ, flow)'],
+                ['🎬', 'Crisp WebM step clips, sharper than GIFs'],
+                ['❓', 'RAG-grounded FAQ and a clean phased flow'],
+                ['🧭', 'Steps name the app, ribbon and tab'],
+              ].map(([ic, t], i) => (
+                <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '7px 0', fontSize: '0.86rem', color: 'rgba(255,255,255,0.88)' }}>
+                  <span style={{ flexShrink: 0 }}>{ic}</span>{t}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p style={{ textAlign: 'center', maxWidth: 760, margin: '32px auto 0', fontSize: '1.06rem', lineHeight: 1.75, color: 'rgba(255,255,255,0.64)' }}>
+            <span style={{ background: 'linear-gradient(90deg,#7b96ff,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}>Why it's the biggest leap:</span>{' '}
+            for the first time the AI <em>watches the screen and hears every word</em>, just like a person. So a one-hour recording becomes a procedure you can actually follow, <em>without ever opening the video.</em>
+          </p>
+        </section>
+
+        {/* ── What's next in v4 (coming soon) ──────────────────── */}
+        <section className="lp-section" style={{ padding: '40px 24px 90px', maxWidth: 940, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#7b96ff', marginBottom: 12 }}>
+              The road ahead
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 4.2vw, 2.8rem)', fontWeight: 700, letterSpacing: '-0.025em' }}>
+              What's next in{' '}
+              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>v4</span>
+              <span style={{ marginLeft: 12, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', background: 'rgba(123,150,255,0.22)', border: '1px solid rgba(123,150,255,0.45)', padding: '4px 12px', borderRadius: 100, verticalAlign: 'middle', whiteSpace: 'nowrap', animation: 'lp-badge-glow 2.6s ease-in-out infinite' }}>Coming soon</span>
+            </h2>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
+            {[
+              ['Smart screenshots', 'Each image auto-zooms and crops to the exact spot that was clicked, so the reader sees precisely where the action happened.'],
+              ['Consolidation pass', 'A final pass that reorganises the whole procedure for even cleaner, more coherent steps with less overlap.'],
+              ['Editable output', 'Edit, reorder and remove steps inside the app before exporting, for a quick human polish.'],
+              ['Sharper vision', 'Higher-resolution frames so the model reads small interface text, like dense spreadsheets, more reliably.'],
+              ['Meeting Minutes mode', 'Optional speaker separation: who said what, and who led the session.'],
+              ['More languages', 'Support for recordings that are not in English.'],
+              ['Custom branding', 'Add your own logo, colours and templates to the exported document.'],
+              ['Self-verify mode', 'The AI re-checks its own steps against the video to catch any slips before you share.'],
+            ].map(([title, desc], i) => (
+              <div key={i} style={{ borderRadius: 16, padding: '22px 20px', background: 'rgba(255,255,255,0.025)', border: '1px dashed rgba(123,150,255,0.35)' }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', marginBottom: 8 }}>{title}</div>
+                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, margin: 0 }}>{desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 

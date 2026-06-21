@@ -17,6 +17,7 @@
     "jspdf": "^2.5.2",
     "lucide-react": "^0.475.0",
     "mammoth": "^1.12.0",
+    "mermaid": "^11.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.16.0",

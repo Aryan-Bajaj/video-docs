@@ -45,8 +45,37 @@ export default function PipelineStatus({ steps }) {
 
   if (!steps?.length) return null
 
+  // Overall progress = completed steps + the active step's own fraction, each
+  // step weighted equally. Gives the user one headline number to watch.
+  const totalSteps = steps.length
+  let doneCount = 0
+  let activeFrac = 0
+  for (const s of steps) {
+    if (s.status === 'done') doneCount++
+    else if (s.status === 'active') {
+      const fp = s.pct != null ? s.pct : (s.step != null && s.total ? (s.step / s.total) * 100 : 0)
+      activeFrac = Math.max(0, Math.min(1, fp / 100))
+    }
+  }
+  const anyError = steps.some(s => s.status === 'error')
+  const allDone = steps.every(s => s.status === 'done')
+  const overallPct = allDone ? 100 : Math.min(99, Math.round(((doneCount + activeFrac) / totalSteps) * 100))
+
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+      {/* Overall progress header */}
+      <div className="px-4 py-3 border-b border-zinc-800 bg-black/20">
+        <div className="flex items-center justify-between mb-2">
+          <span className={`text-xs font-semibold uppercase tracking-widest ${anyError ? 'text-red-400' : allDone ? 'text-emerald-400' : 'text-zinc-300'}`}>
+            {anyError ? 'Stopped' : allDone ? 'Complete' : `Processing · step ${Math.min(doneCount + 1, totalSteps)} of ${totalSteps}`}
+          </span>
+          <span className="text-sm font-mono font-bold text-emerald-400">{overallPct}%</span>
+        </div>
+        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${overallPct}%` }} />
+        </div>
+      </div>
+
       {steps.map((step, i) => {
         const isActive = step.status === 'active'
         const isDone   = step.status === 'done'

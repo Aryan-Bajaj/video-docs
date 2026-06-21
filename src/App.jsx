@@ -7,6 +7,7 @@ import FrameStrip from "./components/FrameStrip"
 import AISettings from "./components/AISettings"
 import DocChat from "./components/DocChat"
 import PipelineStatus from "./components/PipelineStatus"
+import InsightsPanel from "./components/InsightsPanel"
 import useFrameExtractor from "./hooks/useFrameExtractor"
 import useAudioExtractor from "./hooks/useAudioExtractor"
 import useTranscriber from "./hooks/useTranscriber"
@@ -14,7 +15,9 @@ import useAnnotator from "./hooks/useAnnotator"
 import useDocParser from "./hooks/useDocParser"
 import useOCR from "./hooks/useOCR"
 import useVantaHalo from "./hooks/useVantaHalo"
-import { webLLMLabel } from "./lib/llm"
+import { webLLMLabel, isWebLLMVision, ollamaModelHasVision } from "./lib/llm"
+import { generateInsights } from "./lib/insights"
+import { fixTranscriptChunks } from "./lib/transcriptFixups"
 
 const INITIAL_STEPS = [
   { id: 'frames',     label: 'Extract Frames',   status: 'pending', detail: null },
@@ -22,7 +25,8 @@ const INITIAL_STEPS = [
   { id: 'transcribe', label: 'Transcribe Audio',  status: 'pending', detail: null, pct: null },
   { id: 'ocr',        label: 'Read Screen (OCR)', status: 'pending', detail: null, pct: null, step: null, total: null },
   { id: 'loadmodel',  label: 'Load AI Model',     status: 'pending', detail: null, pct: null },
-  { id: 'annotate',   label: 'Annotate Segments', status: 'pending', detail: null, pct: null, step: null, total: null, etaMs: null },
+  { id: 'annotate',   label: 'Write Procedure Steps', status: 'pending', detail: null, pct: null, step: null, total: null, etaMs: null },
+  { id: 'insights',   label: 'Purpose · Summary · FAQ · Flow', status: 'pending', detail: null },
 ]
 
 export default function App() {
@@ -38,14 +42,17 @@ export default function App() {
   const [ocrFrameTexts, setOcrFrameTexts] = useState([])
   const [toolsUsed, setToolsUsed] = useState([])
   const [docTitle, setDocTitle] = useState("")
+  const [companyName, setCompanyName] = useState("")
+  const [insights, setInsights] = useState(null)
   const [aiMode, setAiMode] = useState(null)
   const [aiModel, setAiModel] = useState(null)
 
   const annotateStartRef = useRef(null)
+  const cancelRef = useRef(false)
 
   const { extractFrames } = useFrameExtractor()
   const { extractAudio } = useAudioExtractor()
-  const { transcribe, transcribeProgress } = useTranscriber()
+  const { transcribe, cancelTranscribe, transcribeProgress } = useTranscriber()
   const { annotate } = useAnnotator()
   const { runOCR } = useOCR()
   const { parseDoc, sections: docSections, parsing: docParsing } = useDocParser()
@@ -56,15 +63,26 @@ export default function App() {
     )
   }, [])
 
+  const handleCancel = useCallback(() => {
+    cancelRef.current = true
+    cancelTranscribe()
+    setError("Processing cancelled. Whatever finished is kept below.")
+    setPipelineSteps(prev => prev?.map(s =>
+      s.status === 'active' ? { ...s, status: 'error', detail: 'Cancelled', endedAt: Date.now() } : s
+    ) ?? null)
+  }, [cancelTranscribe])
+
   useEffect(() => {
     if (!transcribeProgress) return
     setPipelineSteps(prev => prev?.map(s => {
       if (s.id !== 'transcribe') return s
       if (transcribeProgress.stage === 'downloading') {
-        return { ...s, status: 'active', detail: 'Downloading Whisper model (~150MB, first run only)', pct: transcribeProgress.pct, startedAt: s.startedAt ?? Date.now() }
+        return { ...s, status: 'active', detail: 'Downloading Whisper model (~970MB, first run only — cached after)', pct: transcribeProgress.pct, startedAt: s.startedAt ?? Date.now() }
       }
       if (transcribeProgress.stage === 'transcribing') {
-        return { ...s, status: 'active', detail: 'Running speech-to-text...', pct: null, startedAt: s.startedAt ?? Date.now() }
+        const { pct, window, windows } = transcribeProgress
+        const detail = windows > 1 ? `Transcribing… part ${window}/${windows}` : 'Running speech-to-text...'
+        return { ...s, status: 'active', detail, pct: pct ?? null, startedAt: s.startedAt ?? Date.now() }
       }
       return s
     }) ?? null)
@@ -72,21 +90,25 @@ export default function App() {
 
   const handleVideoSelect = async (file) => {
     setError(null)
+    cancelRef.current = false
     setAnnotatedDocs([])
     setTranscriptChunks([])
     setFrames([])
     setOcrFrameTexts([])
     setToolsUsed([])
     setDocTitle("")
+    setInsights(null)
     setVideoFile(file)
     setPipelineSteps(INITIAL_STEPS.map((s, i) =>
       i === 0 ? { ...s, status: 'active', startedAt: Date.now() } : s
     ))
 
     try {
-      const extracted = await extractFrames(file, 5)
+      const extracted = await extractFrames(file, 5, (i, total) =>
+        updateStep('frames', { detail: `${i}/${total} frames`, pct: total ? Math.round((i / total) * 100) : null })
+      )
       setFrames(extracted)
-      updateStep('frames', { status: 'done', detail: `${extracted.length} frames`, endedAt: Date.now() })
+      updateStep('frames', { status: 'done', detail: `${extracted.length} frames`, pct: 100, endedAt: Date.now() })
 
       updateStep('audio', { status: 'active', detail: 'Reading audio track...', startedAt: Date.now() })
       const { audio, sampleRate } = await extractAudio(file)
@@ -94,8 +116,12 @@ export default function App() {
 
       updateStep('transcribe', { status: 'active', detail: 'Loading model...', startedAt: Date.now() })
       const result = await transcribe(audio, sampleRate)
-      const chunks = result?.chunks ?? []
+      const chunks = fixTranscriptChunks(result?.chunks ?? []) // correct known domain mis-hearings
       setTranscriptChunks(chunks)
+      if (cancelRef.current || result?.cancelled) {
+        updateStep('transcribe', { status: 'error', detail: `Cancelled · ${chunks.length} segments kept`, endedAt: Date.now() })
+        return
+      }
       updateStep('transcribe', { status: 'done', detail: `${chunks.length} segments found`, endedAt: Date.now() })
 
       // OCR: read on-screen text from frames → captures exact UI labels + detects tools used
@@ -118,13 +144,18 @@ export default function App() {
     }
   }
 
-  const handleStartAnnotation = async (aiMode, sections, model, title) => {
+  const handleStartAnnotation = async (aiMode, sections, model, title, company) => {
     setShowAISettings(false)
     setError(null)
+    cancelRef.current = false
     if (title) setDocTitle(title)
+    setCompanyName(company || "")
+    setInsights(null)
     setAiMode(aiMode)
     setAiModel(model)
     const isWeb = aiMode !== 'ollama'
+    // Vision: does the chosen model take screenshots? (Phi-3.5-Vision / gemma3…)
+    const useVision = isWeb ? isWebLLMVision(model) : await ollamaModelHasVision(model)
     annotateStartRef.current = null // set when token generation actually begins
 
     // "Load AI Model" step: tracked live for WebLLM (download → GPU → compile →
@@ -136,7 +167,7 @@ export default function App() {
       updateStep('loadmodel', { status: 'done', detail: `Ollama · ${model || 'model'}`, startedAt: Date.now(), endedAt: Date.now() })
     }
 
-    const modelLabel = isWeb ? `WebLLM · ${webLLMLabel(model)}` : (model || 'ollama')
+    const modelLabel = (isWeb ? `WebLLM · ${webLLMLabel(model)}` : (model || 'ollama')) + (useVision ? ' · 👁 vision' : '')
     updateStep('annotate', {
       status: isWeb ? 'pending' : 'active',
       step: 0,
@@ -176,10 +207,38 @@ export default function App() {
         },
         sections,
         model,
-        ocrFrameTexts
+        ocrFrameTexts,
+        () => cancelRef.current,
+        useVision,
       )
       setAnnotatedDocs(docs)
+      if (cancelRef.current) {
+        updateStep('annotate', { status: 'error', detail: `Cancelled · ${docs.filter(d => d.annotation).length} done`, endedAt: Date.now() })
+        return
+      }
       updateStep('annotate', { status: 'done', detail: `${docs.length} entries annotated`, endedAt: Date.now() })
+
+      // Insights pass: facilitator summary, FAQ (incl. questions asked in the
+      // meeting) and a Mermaid flow diagram. Best-effort — a failure here must
+      // not lose the annotations the user already has.
+      updateStep('insights', { status: 'active', detail: 'Writing summary…', startedAt: Date.now() })
+      try {
+        const result = await generateInsights(
+          docs, transcriptChunks, aiMode, model,
+          (msg) => updateStep('insights', { detail: msg }),
+          () => cancelRef.current,
+          toolsUsed,
+        )
+        setInsights(result)
+        const bits = [
+          result.summary ? 'summary' : null,
+          result.faqs?.length ? `${result.faqs.length} FAQs` : null,
+          result.mermaid ? 'flow' : null,
+        ].filter(Boolean)
+        updateStep('insights', { status: 'done', detail: bits.length ? bits.join(' · ') : 'skipped', endedAt: Date.now() })
+      } catch (e) {
+        updateStep('insights', { status: 'error', detail: e.message, endedAt: Date.now() })
+      }
     } catch (e) {
       updateStep('annotate', { status: 'error', detail: e.message, endedAt: Date.now() })
       if (isWeb) updateStep('loadmodel', { status: 'error', detail: e.message, endedAt: Date.now() })
@@ -261,7 +320,19 @@ export default function App() {
           />
         ) : (
           <>
-            {pipelineSteps && <PipelineStatus steps={pipelineSteps} />}
+            {pipelineSteps && (
+              <div className="space-y-2">
+                <PipelineStatus steps={pipelineSteps} />
+                {pipelineSteps.some(s => s.status === 'active') && (
+                  <button
+                    onClick={handleCancel}
+                    className="text-xs border border-red-800/60 hover:border-red-500 hover:bg-red-950/30 text-red-300 rounded-lg px-3 py-1.5 transition-all"
+                  >
+                    ✕ Cancel processing
+                  </button>
+                )}
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-950/40 border border-red-800 rounded-xl px-4 py-3 text-sm text-red-300">
@@ -283,12 +354,16 @@ export default function App() {
               </div>
             </div>
 
+            {insights && <InsightsPanel insights={insights} />}
+
             <ExportBar
               annotatedDocs={annotatedDocs}
               transcriptChunks={transcriptChunks}
               videoName={videoFile.name}
               videoFile={videoFile}
               docTitle={docTitle}
+              companyName={companyName}
+              insights={insights}
               toolsUsed={toolsUsed}
               frames={frames}
             />

@@ -2,11 +2,11 @@
 
 **Automated Video Documentation · AI Transcription · Local LLM Annotation · Beautiful Exports**
 
-`React` `Whisper AI` `Ollama` `WebLLM` `OCR` `RAG` `Three.js` `Vite` `License: MIT` `Version 2`
+`React` `Whisper AI` `Vision` `Ollama` `WebLLM` `RAG` `Three.js` `Vite` `License: MIT` `Version 3`
 
 > Turn any screen recording into polished, step-by-step documentation, entirely in your browser. No server. No uploads. No subscription. Ever.
 
-> **Now on Version 2.** It reads the screen with OCR, builds animated step GIFs, covers the whole video with chunking, and adds **Vid Chat** and a standalone **Doc Chat** app. Every v2 addition is marked **🆕 New in v2** throughout this document. See [New in v2](#-new-in-v2).
+> **Now on Version 3.** The AI now *sees the screen* and *hears every word*, using a vision model plus Whisper Small, and turns a recording into a real **Desktop Procedure**: an index, purpose, numbered steps, sharp WebM step clips, a RAG-grounded FAQ and a flow diagram. See [New in v3](#-new-in-v3).
 
 ---
 
@@ -14,7 +14,8 @@
 
 1. [What Is This?](#-what-is-this)
 2. [Live Demo](#-live-demo)
-3. [New in v2](#-new-in-v2) `🆕`
+3. [New in v3](#-new-in-v3) `🆕`
+4. [New in v2](#-new-in-v2)
 4. [How It Works: The Full Pipeline](#-how-it-works-the-full-pipeline)
 5. [Module Breakdown](#-module-breakdown)
    - [Module 1: Frame Extraction](#module-1-frame-extraction)
@@ -60,7 +61,7 @@ It works for:
 
 And the best part? **Everything runs in your browser.** No API keys. No cloud. No privacy trade-offs.
 
-P.S. — This is Version 2. I’m currently working on Version 3 to improve the overall documentation quality.
+P.S. Version 3 is here, the biggest leap yet. I’m now working on Version 4.
 ---
 
 ## 🌐 Live Demo
@@ -70,6 +71,35 @@ P.S. — This is Version 2. I’m currently working on Version 3 to improve the 
 * `/` is the landing page
 * `/#/app` is the VideoDoc app (video to documentation)
 * `/#/docchat` is the Doc Chat app (upload a document and chat with it)
+
+---
+
+## ✨ New in v3
+
+Version 3 is the biggest leap yet. The AI now **watches the screen and hears every word**, like a person, so a recording becomes a real Desktop Procedure you can follow without ever opening the video. Everything still runs client-side. No server, no API keys.
+
+* **Vision: the AI sees the screen.** Instead of relying only on OCR text, a vision model looks at the actual screenshots. It names the exact buttons, menus and tabs, ignores the webcam tiles in a call, and works out vague references like "click here" by seeing where the click landed. Two ways, both local: **gemma3** via Ollama, or **Phi-3.5-Vision** in the browser via WebLLM.
+* **Whisper Small for the transcript.** Upgraded from the tiny model to Whisper Small, far more accurate on names, accents and technical jargon (SAP, cost centres, and so on). The transcript is the model's only "ears", so this is the single biggest lever on quality.
+* **A real Desktop Procedure (SOP), not loose notes.** The output is now a structured document: an **Index**, a **Purpose**, **Prerequisites**, a numbered **Procedure** (each step has its actions, the result, an optional note and a screen capture), **Key Observations**, an **Executive Summary** at the top, an **FAQ**, and a **flow diagram**.
+* **Sharp WebM step clips (no more GIFs).** Each step is a short, true-colour WebM clip of the real action, far clearer than a 256-colour GIF and smaller too. Recorded in the browser and base64-inlined into the self-contained HTML.
+* **Smarter, deduplicated steps.** Each segment becomes one clean step (title, ordered actions, result, note). Off-topic or silent stretches are skipped instead of padded with filler, and repeated or overlapping steps are merged, so a one-hour recording reads as roughly 30 to 35 clear steps, not 48 fragments.
+* **Steps say WHERE, not just what.** Every action names where to find the element (the application, ribbon, tab or menu), using the screen plus the model's knowledge of the app.
+* **RAG-grounded FAQ.** Questions are generated from the actual discussion (diverse angles, no near-duplicates), then each answer is retrieved from the relevant transcript passages and enriched with the model's general knowledge, without inventing specifics.
+* **Clean phased flow diagram.** Every step is kept, but grouped into phases (steps flow left to right inside a phase, phases stack top to bottom), so the chart stays readable instead of one long vertical chain.
+* **Hidden transcript for AI.** The full transcript is embedded in the exported HTML but hidden from readers, so the document can be pasted into any AI assistant for deeper Q&A.
+* **Stronger model picker.** WebLLM now offers Fast (1B), Balanced (Qwen2.5-3B, default), Max (Qwen2.5-7B) and a Vision model, each with accuracy and speed shown up front. The app falls back to a lighter model if a GPU cannot load the chosen one.
+* **Faster, safer pipeline.** Frame extraction no longer stalls on long videos, transcription runs in 5-minute windows with real progress and a Cancel button, and an overall progress bar shows the whole run at a glance. Known domain mishearings (like "cost centre") are auto-corrected.
+
+### Coming in v4
+
+* **Smart screenshots** that auto-zoom and crop to the exact spot that was clicked.
+* **Consolidation pass** for an even cleaner, more coherent procedure.
+* **Editable output:** edit, reorder and remove steps before exporting.
+* **Sharper vision** that reads small interface text more reliably.
+* **Meeting Minutes mode:** who said what, and who led the session.
+* **More languages** for non-English recordings.
+* **Custom branding:** your own logo, colours and templates.
+* **Self-verify mode:** the AI re-checks its steps against the video.
 
 ---
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
-import { X, Globe, Cpu, Plus, FileText, ChevronDown } from "lucide-react"
+import { X, Globe, Cpu, Plus, FileText, ChevronDown, Eye } from "lucide-react"
 import { DEFAULT_SECTIONS } from "../hooks/useDocParser"
-import { WEBLLM_MODELS, DEFAULT_WEBLLM_MODEL } from "../lib/llm"
+import { WEBLLM_MODELS, DEFAULT_WEBLLM_MODEL, isWebLLMVision, ollamaModelHasVision } from "../lib/llm"
 
 export default function AISettings({ onConfirm, onClose, suggestedSections, toolsUsed = [] }) {
   const [mode, setMode] = useState("webllm") // browser-first: works for everyone, no install
@@ -13,6 +13,8 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
   const [customSections, setCustomSections] = useState([])
   const [customInput, setCustomInput] = useState("")
   const [title, setTitle] = useState("")
+  const [company, setCompany] = useState("")
+  const [ollamaVision, setOllamaVision] = useState(false)
 
   useEffect(() => {
     setSelected(suggestedSections?.length ? suggestedSections : [])
@@ -45,6 +47,14 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
     const id = setInterval(() => checkOllama(true), 4000)
     return () => clearInterval(id)
   }, [mode, ollamaStatus])
+
+  // Does the selected Ollama model support vision (e.g. gemma3)? → show a badge.
+  useEffect(() => {
+    if (mode !== "ollama" || !selectedModel) { setOllamaVision(false); return }
+    let alive = true
+    ollamaModelHasVision(selectedModel).then((v) => { if (alive) setOllamaVision(v) })
+    return () => { alive = false }
+  }, [mode, selectedModel])
 
   const toggle = (s) =>
     setSelected(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
@@ -80,6 +90,15 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500"
           />
           <p className="text-xs text-zinc-600 mt-1.5">Used as the guide heading. Leave blank for an auto title (not the video file name).</p>
+
+          <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2 mt-4">Company name <span className="text-zinc-600 normal-case tracking-normal">(optional)</span></p>
+          <input
+            type="text" value={company} onChange={e => setCompany(e.target.value)}
+            placeholder="e.g. company name"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500"
+          />
+          <p className="text-xs text-zinc-600 mt-1.5">Shown in the top-right of the exported document.</p>
+
           {toolsUsed.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2.5">
               <span className="text-xs text-zinc-500">Detected tools:</span>
@@ -147,6 +166,11 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
                     </div>
                   ))}
                 </div>
+                {isWebLLMVision(webModel) && (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-2.5 py-1.5">
+                    <Eye className="w-3.5 h-3.5 shrink-0" /> Reads the actual screen (not just OCR) — most accurate steps.
+                  </div>
+                )}
                 <p className="text-xs text-zinc-600 mt-2 leading-relaxed">{m.note}</p>
                 <p className="text-xs text-zinc-600 mt-1.5">
                   Times are a rough per-segment estimate plus a one-time model download. Slower on Intel / integrated graphics, faster on a dedicated GPU.
@@ -171,6 +195,11 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
               </div>
+              {ollamaVision && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-2.5 py-1.5">
+                  <Eye className="w-3.5 h-3.5 shrink-0" /> This model sees the screen — screenshots are sent for the most accurate steps.
+                </div>
+              )}
             </div>
           )}
 
@@ -216,55 +245,24 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
 
         <div className="border-t border-zinc-800" />
 
-        {/* Documentation Sections */}
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <FileText className="w-4 h-4 text-zinc-500" />
-            <p className="text-xs text-zinc-500 uppercase tracking-widest">Documentation Sections</p>
-            {suggestedSections?.length > 0 && (
-              <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full ml-auto">
-                from your reference doc
-              </span>
-            )}
+        {/* Output format: fixed professional Desktop Procedure */}
+        <div className="bg-zinc-800/40 border border-zinc-700/60 rounded-lg p-3.5">
+          <div className="flex items-center gap-2 mb-1.5">
+            <FileText className="w-4 h-4 text-emerald-400" />
+            <p className="text-xs text-zinc-300 uppercase tracking-widest font-semibold">Output: Desktop Procedure</p>
           </div>
-          <p className="text-xs text-zinc-600 mb-3">
-            Select sections for structured output — or leave empty for auto step-by-step format.
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Generates a structured procedure with an Index, Purpose, Prerequisites, numbered
+            step-by-step actions (Action → Result + screenshot), Key Observations, Summary, FAQ and a Flow diagram.
+            Off-topic / silent segments are skipped automatically.
           </p>
-
-          <div className="flex flex-wrap gap-2">
-            {allSuggestions.map(s => (
-              <button key={s} onClick={() => toggle(s)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                  selected.includes(s)
-                    ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                    : 'border-zinc-700 text-zinc-500 hover:border-zinc-500'
-                }`}>
-                {selected.includes(s) ? '✓ ' : ''}{s}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-2 mt-3">
-            <input type="text" value={customInput}
-              onChange={e => setCustomInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addCustom()}
-              placeholder="Add custom section..."
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-500" />
-            <button onClick={addCustom} disabled={!customInput.trim()}
-              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 border border-zinc-700 rounded-lg text-zinc-400 transition-colors">
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          {selected.length === 0 && (
-            <p className="text-xs text-zinc-600 mt-2">No sections selected — will generate numbered steps automatically.</p>
-          )}
         </div>
 
         <button
-          onClick={() => onConfirm(mode, selected.length > 0 ? selected : null, mode === "ollama" ? selectedModel : webModel, title.trim())}
+          onClick={() => onConfirm(mode, null, mode === "ollama" ? selectedModel : webModel, title.trim(), company.trim())}
           disabled={mode === "ollama" && ollamaStatus === "down"}
           className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed rounded-xl text-sm font-medium transition-colors">
-          Start Annotation
+          Generate Procedure
         </button>
       </div>
     </div>

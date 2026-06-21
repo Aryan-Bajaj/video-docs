@@ -2,7 +2,8 @@ import { useState } from "react"
 import { exportHTML } from "../lib/exportHTML"
 import { exportPDF } from "../lib/exportPDF"
 import { exportDOCX } from "../lib/exportDOCX"
-import useGifMaker from "../hooks/useGifMaker"
+import { renderMermaidSVG, svgToPngDataURL } from "../lib/mermaidRender"
+import useClipMaker from "../hooks/useClipMaker"
 import { Download } from "lucide-react"
 
 function toExportDocs(annotatedDocs, transcriptChunks) {
@@ -15,11 +16,11 @@ function toExportDocs(annotatedDocs, transcriptChunks) {
   })
 }
 
-export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, videoFile, docTitle, toolsUsed, frames }) {
+export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, videoFile, docTitle, companyName, insights, toolsUsed, frames }) {
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState(null)
   const [gifMsg, setGifMsg] = useState(null)
-  const { makeGifs } = useGifMaker()
+  const { makeClips } = useClipMaker()
 
   const hasContent = (annotatedDocs?.length ?? 0) + (transcriptChunks?.length ?? 0) > 0
   // Title for the guide: user-provided title preferred; never the raw video file name.
@@ -32,15 +33,26 @@ export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, 
     setError(null)
     try {
       const docs = toExportDocs(annotatedDocs, transcriptChunks)
-      const meta = { title, tools: toolsUsed || [] }
+
+      // Flow diagram: render the Mermaid once. HTML embeds the live SVG; PDF/DOCX
+      // embed a rasterised PNG. Both are fully offline (no runtime, no CDN).
+      let mermaidSvg = "", flowImage = null
+      if (insights?.mermaid) {
+        setGifMsg("Rendering flow diagram…")
+        mermaidSvg = await renderMermaidSVG(insights.mermaid)
+        if (type !== "html" && mermaidSvg) flowImage = await svgToPngDataURL(mermaidSvg)
+        setGifMsg(null)
+      }
+      const meta = { title, company: companyName || "", insights: insights || null, tools: toolsUsed || [], flowImage, transcript: transcriptChunks || [] }
+
       if (type === "html") {
-        // Build a smooth animated GIF per step (±3s clip) — browser-only, no server.
-        let gifs = new Map()
+        // Build a short, sharp WebM clip per step — browser-only, base64-inlined.
+        let clips = new Map()
         if (videoFile && docs.length) {
-          gifs = await makeGifs(videoFile, docs, (i, t) => setGifMsg(`Building step GIFs ${i}/${t}…`))
+          clips = await makeClips(videoFile, docs, (i, t) => setGifMsg(`Building step clips ${i}/${t}… (keep this tab focused)`))
           setGifMsg(null)
         }
-        exportHTML(docs, name, frames, { ...meta, gifs })
+        await exportHTML(docs, name, frames, { ...meta, clips, mermaidSvg })
       }
       if (type === "pdf") await exportPDF(docs, name, meta)
       if (type === "docx") await exportDOCX(docs, name, meta)

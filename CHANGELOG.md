@@ -2,7 +2,20 @@
 
 All notable changes to VideoDoc, version by version. Newest first.
 
-## v3 — Sees and hears, like a person (current)
+## v5 (current)
+
+Accuracy release, driven by testing against a real 32 minute enterprise meeting recording and checking every generated step against the actual video.
+
+* **Structured output.** The model replies in schema constrained JSON on every engine (Ollama, llama.cpp, WebLLM), so malformed or chatty replies are impossible. The schema forces the model to describe what it sees on screen before it may decide a segment has no step, which fixed the biggest source of missed steps in real meeting recordings.
+* **Screen share detection.** Webcam only minutes at the start of a meeting can no longer produce fabricated steps.
+* **Scene based steps.** Step boundaries follow pixel level screen changes instead of a fixed clock, so steps line up with what actually happened.
+* **Recall guard.** A skipped segment with real evidence (spoken action words or a busy screen) gets a second look before it is allowed to vanish.
+* **Grounded summaries.** The executive summary no longer invents decisions, outcomes or next steps to round off the story, and never names software that was not on screen.
+* **Cleaner input.** Meeting chatter, filler and speech recognition repeats are scrubbed from the transcript before the model sees it. Garbled OCR identifiers are stripped from results.
+* **Editing.** Steps can now be reordered and removed, not just edited, and every change flows into the exports.
+* **Two builds.** A hosted web build with per video size and length limits, and a fully offline desktop build that bundles llama.cpp with the gemma 3 vision model (see desktop/README.md).
+
+## v3 — Sees and hears, like a person
 
 The biggest leap yet. The AI now watches the screen and hears every word, so a recording becomes a real Desktop Procedure you can follow without opening the video.
 

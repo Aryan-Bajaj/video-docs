@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 function formatTime(ms) {
   if (!ms || ms < 0) return "0s"
@@ -34,6 +34,10 @@ function StepIcon({ status }) {
 
 export default function PipelineStatus({ steps }) {
   const [now, setNow] = useState(Date.now())
+  // Highest overall % shown so far this run — the headline bar must only ever
+  // move forward. WebLLM's loader reports progress that resets between phases
+  // (download → compile shaders), which would otherwise jerk the bar backwards.
+  const maxPctRef = useRef(0)
 
   // Tick every second while any step is active
   useEffect(() => {
@@ -59,7 +63,12 @@ export default function PipelineStatus({ steps }) {
   }
   const anyError = steps.some(s => s.status === 'error')
   const allDone = steps.every(s => s.status === 'done')
-  const overallPct = allDone ? 100 : Math.min(99, Math.round(((doneCount + activeFrac) / totalSteps) * 100))
+  const rawPct = allDone ? 100 : Math.min(99, Math.round(((doneCount + activeFrac) / totalSteps) * 100))
+  // Clamp to be monotonic within a run; reset when a fresh run begins (all steps
+  // back to pending) so the next video starts from 0 again.
+  if (steps.every(s => s.status === 'pending')) maxPctRef.current = 0
+  const overallPct = Math.max(maxPctRef.current, rawPct)
+  maxPctRef.current = overallPct
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">

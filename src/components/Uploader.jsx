@@ -1,10 +1,28 @@
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { Video, FileCode, FileText } from "lucide-react"
+import { checkVideoSize, checkVideoDuration, MAX_VIDEO_MB, MAX_VIDEO_MIN } from "../lib/limits"
 
 export default function Uploader({ onVideoSelect, onCodeSelect, onDocSelect, docParsing, docSections }) {
   const videoRef = useRef()
   const codeRef = useRef()
   const docRef = useRef()
+  const [limitError, setLimitError] = useState("")
+
+  // Enforce build-level limits BEFORE the pipeline touches the file, so a
+  // too-big video is a friendly message instead of a crashed browser tab.
+  const handleVideo = async (file) => {
+    setLimitError("")
+    const sizeErr = checkVideoSize(file)
+    if (sizeErr) { setLimitError(sizeErr); return }
+    const durErr = await checkVideoDuration(file)
+    if (durErr) { setLimitError(durErr); return }
+    onVideoSelect(file)
+  }
+
+  const limitHint = [
+    MAX_VIDEO_MIN ? `up to ${MAX_VIDEO_MIN} min` : null,
+    MAX_VIDEO_MB ? `${MAX_VIDEO_MB} MB` : null,
+  ].filter(Boolean).join(" / ")
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
@@ -21,7 +39,7 @@ export default function Uploader({ onVideoSelect, onCodeSelect, onDocSelect, doc
         >
           <Video className="w-8 h-8 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
           <span className="text-sm text-zinc-400">Upload Video</span>
-          <span className="text-xs text-zinc-600">.mp4 .mov .webm</span>
+          <span className="text-xs text-zinc-600">.mp4 .mov .webm{limitHint ? ` · ${limitHint}` : ""}</span>
         </button>
 
         {/* Code files */}
@@ -56,6 +74,12 @@ export default function Uploader({ onVideoSelect, onCodeSelect, onDocSelect, doc
         </button>
       </div>
 
+      {limitError && (
+        <div className="max-w-2xl text-sm text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 text-center">
+          {limitError}
+        </div>
+      )}
+
       {docSections?.length > 0 && (
         <div className="flex flex-wrap gap-2 max-w-2xl justify-center">
           {docSections.map(s => (
@@ -67,7 +91,7 @@ export default function Uploader({ onVideoSelect, onCodeSelect, onDocSelect, doc
       )}
 
       <input ref={videoRef} type="file" accept="video/*" className="hidden"
-        onChange={e => e.target.files[0] && onVideoSelect(e.target.files[0])} />
+        onChange={e => e.target.files[0] && handleVideo(e.target.files[0])} />
       <input ref={codeRef} type="file" multiple className="hidden"
         onChange={e => onCodeSelect(Array.from(e.target.files))} />
       <input ref={docRef} type="file" accept=".html,.htm,.docx" className="hidden"

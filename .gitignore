@@ -3,8 +3,14 @@ node_modules/
 
 # Build output
 dist/
+dist-desktop/
 dist-backup-v1/
 *.local
+
+# Desktop bundle artifacts (downloaded by desktop/get-engine.ps1, several GB)
+desktop/llama/
+desktop/models/
+desktop/app/
 
 # Logs
 *.log
@@ -19,6 +25,12 @@ Thumbs.db
 # Vite cache
 .vite/
 
-# Env
+# Tesseract language cache (downloaded at runtime)
+eng.traineddata
+
+# Env (the two build mode files below are checked in on purpose: they hold no
+# secrets and Netlify needs .env.netlify to build from the repo)
 .env
 .env.*
+!.env.netlify
+!.env.desktop

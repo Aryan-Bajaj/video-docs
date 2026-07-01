@@ -5,12 +5,13 @@
 //   - tight, delimited output formats that parse leniently
 //   - deterministic fallbacks so a section never comes back empty/broken.
 
-import { callOllama, callWebLLM, cleanLLMOutput } from "./llm"
+import { callOllama, callWebLLM, callLocalEngine, cleanLLMOutput } from "./llm"
+import { isFillerNote } from "./skillPrompt"
 
 function callLLM(userMsg, systemPrompt, aiMode, model, onStatus, opts = {}) {
-  return aiMode === "ollama"
-    ? callOllama(userMsg, systemPrompt, model, opts)
-    : callWebLLM(userMsg, systemPrompt, onStatus, { ...opts, model })
+  if (aiMode === "ollama") return callOllama(userMsg, systemPrompt, model, opts)
+  if (aiMode === "local") return callLocalEngine(userMsg, systemPrompt, null, opts)
+  return callWebLLM(userMsg, systemPrompt, onStatus, { ...opts, model })
 }
 
 // One-line heading for a doc (procedure step title / first action / transcript).
@@ -74,7 +75,9 @@ function extractAskedQuestions(chunks, max = 6) {
 
 // ── Purpose (document-level, once) ──
 async function genPurpose(outline, transcript, tools, aiMode, model, onStatus) {
-  const system = `You write the PURPOSE statement of a Desktop Procedure (SOP). In 2-3 sentences, state what this procedure enables the reader to do and why it matters. No preamble, no "this document". Be specific to the actual task. Do not invent.`
+  const toolNames = tools?.length ? tools.join(", ") : ""
+  const system = `You write the PURPOSE statement of a Desktop Procedure (SOP). In 2-3 sentences, state what this procedure enables the reader to do and why it matters. No preamble, no "this document". Be specific to the actual task. Do not invent.
+${toolNames ? `The ONLY software involved is: ${toolNames}. Never mention any other product (e.g. Excel, Power BI, Salesforce) — they are not used here.` : ""}`
   const toolLine = tools?.length ? `Tools/systems involved: ${tools.join(", ")}.\n` : ""
   const raw = await callLLM(`${toolLine}OUTLINE:\n${outline}\n\nTRANSCRIPT EXCERPTS:\n${transcript}`, system, aiMode, model, onStatus, { maxTokens: 220, temperature: 0.3 })
   return cleanLLMOutput(raw)
@@ -83,13 +86,14 @@ async function genPurpose(outline, transcript, tools, aiMode, model, onStatus) {
 // ── Prerequisites (document-level, once) → array of bullet strings ──
 async function genPrerequisites(outline, transcript, tools, aiMode, model, onStatus) {
   const toolLine = tools?.length ? `Detected tools/systems: ${tools.join(", ")}.\n` : ""
+  const only = tools?.length ? tools.join(", ") : ""
   const system = `List the PREREQUISITES a reader needs BEFORE starting this procedure: access, systems, tools, files, or permissions.
 Output ONLY a plain bullet list, 3-6 lines, each starting with "- ".
 Do NOT write any preamble, heading, outline, or timestamps. Do NOT explain anything.
-Example:
-- Access to SAP Business Warehouse
-- Microsoft Excel with the Analysis add-in
-- Permission to view R&D cost centers`
+${only ? `The ONLY software involved is: ${only}. NEVER list any other product (do NOT write Excel, Power BI, Salesforce, etc.) — they are not used in this procedure.` : ""}
+Example shape (use the ACTUAL tools/permissions from this session, not these words):
+- Access to <the system used>
+- Permission to view <the relevant data>`
   const raw = await callLLM(`${toolLine}TASK OUTLINE:\n${outline}`, system, aiMode, model, onStatus, { maxTokens: 220, temperature: 0.2 })
   const lines = cleanLLMOutput(raw)
     .split("\n")
@@ -102,14 +106,25 @@ Example:
 }
 
 // ── Summary ──
-async function genSummary(outline, transcript, aiMode, model, onStatus) {
-  const system = `You write a comprehensive SUMMARY of a recorded session so a reader who did NOT attend understands the full picture without watching the video.
-Cover, in flowing prose (no bullet list, no preamble like "This recording"):
-1. The OBJECTIVE — what this session set out to achieve and why it matters.
-2. WHAT WAS DONE — the main activities/steps in order.
-3. KEY DECISIONS and the reasoning behind them.
-4. The OUTCOME and any open points or next steps.
-Write 6-10 specific sentences. Do not invent anything not supported below.`
+// The old prompt DEMANDED "key decisions" and "outcome / next steps" slots —
+// when the session didn't contain them, the model invented them to fill the
+// template (fabricated conclusions, dramatized "critical decisions"). Now every
+// section is conditional on evidence, and embellished narration is banned.
+async function genSummary(outline, transcript, tools, aiMode, model, onStatus) {
+  const only = tools?.length ? tools.join(", ") : ""
+  const system = `You write a factual SUMMARY of a recorded working session so a reader who did NOT attend understands what happened without watching the video.
+Cover, in flowing prose (no bullet list, no preamble like "This recording"), ONLY what the material below actually supports:
+1. What was worked on and, IF stated, why.
+2. The main activities in order.
+3. Decisions or reasoning — ONLY if someone actually said them. A system limitation ("we only have crosstab") is a constraint, not a decision.
+4. Open points or next steps — ONLY if explicitly mentioned. If the session just ends, say nothing about outcomes.
+
+HARD RULES:
+- Do NOT invent objectives, conclusions, decisions, or next steps to round off the story. A summary with a missing "outcome" is correct; an invented one is a serious error.
+- Neutral tone. No dramatizing words ("critical", "key moment", "meticulously", "significant") unless the speaker used them.
+- Do not interpret what findings "reveal" or "warrant" — describe what was done, not what it implies.
+${only ? `- The ONLY software in this session is: ${only}. NEVER name any other product (no Business Warehouse, Excel, Power BI, …) unless it literally appears in the material below.` : ""}
+Write 5-9 specific sentences.`
   const user = `OUTLINE (chronological):\n${outline}\n\nTRANSCRIPT EXCERPTS:\n${transcript}`
   const raw = await callLLM(user, system, aiMode, model, onStatus, { maxTokens: 650, temperature: 0.3 })
   return cleanLLMOutput(raw)
@@ -188,7 +203,7 @@ async function genFAQ(outline, transcript, asked, transcriptChunks, aiMode, mode
     const ctx = (hits.length ? hits : (transcriptChunks || []).slice(0, 6)).map((c) => c.text).join("\n")
     const system = `Answer this question about a procedure clearly and helpfully.
 Use the TRANSCRIPT EXCERPTS below as the PRIMARY source for any specifics (exact names, values, steps).
-You MAY add brief, accurate general knowledge about the tools/concepts involved (e.g. Microsoft Excel, SAP Business Warehouse, cost centres) to make the answer clearer and more complete — but do NOT contradict the excerpts, and do NOT invent specific names or values that are not present.
+You MAY add brief, accurate general knowledge about the concepts involved (e.g. cost centres, crosstabs, semantic tags) to make the answer clearer — but do NOT contradict the excerpts, do NOT invent specific names or values, and NEVER name a software product (such as Excel, Power BI, or Salesforce) that is not actually mentioned in the excerpts.
 Reply in 1-3 sentences of plain prose. If the question is unrelated to this material, reply EXACTLY "SKIP".
 
 TRANSCRIPT EXCERPTS:
@@ -200,10 +215,15 @@ ${ctx.slice(0, 2400)}`
   return faqs.filter(isRealFAQ)
 }
 
-// Drop junk FAQ entries that slipped through (transcript fragments, filler).
+// Drop junk FAQ entries that slipped through (transcript fragments, filler,
+// ASR mishearings). A question built around reported speech ("He will say to
+// you, what kind of table…") or a garbled quote ("what does 'brother here'
+// mean?") is transcript noise wearing a question mark — never a real FAQ.
 function isRealFAQ({ q, a }) {
   if (!q || !a || a.length < 8) return false
   if (!q.endsWith("?")) return false
+  if (/\[unclear\]/i.test(q) || /\[unclear\]/i.test(a)) return false
+  if (/^\s*(he|she|they|the speaker|someone|the user)\b[^?]*\b(say|says|said|saying|will say)\b/i.test(q)) return false
   if (/\b(okay|right|yeah|you know|i like|i think)\b/i.test(q) && q.split(/\s+/).length < 7) return false
   if (!/\b(how|what|why|when|where|which|who|can|could|should|would|will|do|does|did|is|are|may)\b/i.test(q)) return false
   return true
@@ -304,7 +324,7 @@ function collectKeyObservations(docs) {
   const out = []
   for (const d of docs || []) {
     let n = (d.step?.note || "").replace(/^[\s\-–—•:]+/, "").trim()
-    if (n.length > 3 && !/^[-–—.\s]*$/.test(n) && !seen.has(n.toLowerCase())) {
+    if (n.length > 3 && !/^[-–—.\s]*$/.test(n) && !isFillerNote(n) && !seen.has(n.toLowerCase())) {
       seen.add(n.toLowerCase()); out.push(n)
     }
   }
@@ -337,7 +357,7 @@ export async function generateInsights(docs, transcriptChunks, aiMode, model, on
   if (shouldCancel()) return { ...empty, purpose, prerequisites, keyObservations }
   note("Writing summary…")
   let summary = ""
-  try { summary = await genSummary(outline, transcript, aiMode, model, note) } catch { /* leave blank */ }
+  try { summary = await genSummary(outline, transcript, tools, aiMode, model, note) } catch { /* leave blank */ }
 
   if (shouldCancel()) return { ...empty, purpose, prerequisites, keyObservations, summary }
   note("Building FAQ (retrieving answers)…")

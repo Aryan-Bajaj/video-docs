@@ -4,10 +4,17 @@ export default function useFrameExtractor() {
   const canvasRef = useRef(document.createElement("canvas"))
 
   // Heavy screen recordings are expensive to DECODE in-browser. Seeking to a
-  // small number of points decodes only NEAR those points, so fewer frames =
-  // much faster than full playback (which must decode every frame). 80 frames
-  // is plenty for OCR scene-detection + step thumbnails. MAX_W keeps text legible.
-  const MAX_FRAMES = 80
+  // small number of points decodes only NEAR those points, so sampling = much
+  // faster than full playback. The sampling DENSITY flexes with the video length
+  // (see below) so a 2-minute clip and a 2-hour recording are both covered well.
+  // MAX_W keeps on-screen text legible for OCR / vision.
+  //
+  // Adaptive sampling: aim for one frame roughly every TARGET_SPACING seconds,
+  // but never fewer than MIN_FRAMES (so short clips stay detailed) and never more
+  // than MAX_FRAMES (so OCR time + memory stay bounded on long recordings).
+  const TARGET_SPACING = 10 // seconds between frames we aim for
+  const MIN_FRAMES = 12     // floor — even a 30s clip gets real coverage
+  const MAX_FRAMES = 180    // ceiling — keeps OCR/decoding tractable on long videos
   const MAX_W = 1280
   const SEEK_TIMEOUT = 4000 // ms — skip a stalled seek instead of hanging
 
@@ -35,7 +42,10 @@ export default function useFrameExtractor() {
       video.addEventListener("loadedmetadata", () => {
         const dur = video.duration
         if (!dur || !isFinite(dur)) { finish(); return }
-        const interval = Math.max(intervalSecs, dur / MAX_FRAMES)
+        // Pick a frame count that scales with duration, clamped to [MIN, MAX],
+        // then derive the interval from it — so density flexes with the video.
+        const targetFrames = Math.max(MIN_FRAMES, Math.min(MAX_FRAMES, Math.round(dur / TARGET_SPACING)))
+        const interval = dur / targetFrames
         const scale = Math.min(1, MAX_W / video.videoWidth)
         canvas.width = Math.round(video.videoWidth * scale)
         canvas.height = Math.round(video.videoHeight * scale)

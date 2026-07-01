@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VideoDoc — How to use it</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --bg2:#0f0f11; --card:#161618; --card2:#1c1c20;
+    --border:#27272a; --border2:#3f3f46;
+    --ink:#e7e7ea; --ink2:#a9a9b2; --ink3:#76767f;
+    --emerald:#34d399; --emerald-dim:#10b981; --teal:#2dd4bf; --amber:#fbbf24;
+    --r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;font-size:16px}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px}
+  a{color:var(--emerald);text-decoration:none}
+
+  /* hero */
+  header{padding:64px 0 40px;text-align:center;background:radial-gradient(1200px 380px at 50% -120px,rgba(52,211,153,.14),transparent 70%)}
+  .logo{display:inline-flex;align-items:center;gap:9px;font-weight:600;font-size:15px;color:var(--ink2);margin-bottom:28px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--emerald)}
+  header h1{font-size:clamp(34px,6vw,52px);font-weight:700;letter-spacing:-.02em;line-height:1.05}
+  header h1 span{background:linear-gradient(90deg,var(--emerald),var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent}
+  header p{color:var(--ink2);font-size:18px;margin-top:16px;max-width:560px;margin-left:auto;margin-right:auto}
+  .who{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+  .who span{font-size:13px;padding:6px 14px;border-radius:999px;border:1px solid var(--border2);color:var(--ink2);background:var(--card)}
+  .who b{color:var(--emerald)}
+
+  /* steps */
+  .steps{padding:24px 0 40px}
+  .step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:26px;margin:22px 0;position:relative;overflow:hidden}
+  .step::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--emerald),var(--teal))}
+  .num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:rgba(52,211,153,.13);color:var(--emerald);font-weight:700;border:1px solid rgba(52,211,153,.35);font-size:15px}
+  .step h2{display:flex;align-items:center;gap:14px;font-size:21px;font-weight:600;letter-spacing:-.01em}
+  .step h2 small{display:block;font-size:13px;color:var(--ink3);font-weight:500;margin-top:2px}
+  .shot{margin:18px 0;border:1px solid var(--border2);border-radius:10px;overflow:hidden;background:#000}
+  .shot img{display:block;width:100%}
+  .cap{font-size:12px;color:var(--ink3);text-align:center;padding:7px;background:var(--bg2);border-top:1px solid var(--border)}
+
+  .do{display:flex;gap:12px;margin:14px 0;padding:14px 16px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.25);border-radius:10px}
+  .do .ic{color:var(--emerald);font-weight:700;flex-shrink:0}
+  .do b{color:var(--emerald)}
+  .tech{margin-top:12px;padding:12px 16px;background:var(--bg2);border:1px dashed var(--border2);border-radius:10px;font-size:14px;color:var(--ink2)}
+  .tech b{color:var(--teal)}
+
+  /* faithful UI mockups */
+  .mock{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px;margin:18px 0;font-size:13px}
+  .mrow{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin:7px 0;background:var(--card)}
+  .mrow .lab{font-weight:500}
+  .mrow .meta{margin-left:auto;color:var(--ink3);font-size:12px}
+  .pill{font-size:11px;padding:3px 9px;border-radius:999px}
+  .pill.ok{background:rgba(52,211,153,.15);color:var(--emerald)}
+  .pill.warn{background:rgba(251,191,36,.15);color:var(--amber)}
+  .pill.teal{background:rgba(45,212,191,.15);color:var(--teal)}
+  .cards2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+  .pick{border:2px solid var(--border);border-radius:10px;padding:12px;background:var(--card)}
+  .pick.sel{border-color:var(--emerald);background:rgba(52,211,153,.08)}
+  .pick .t{font-weight:600;font-size:13px}
+  .pick .s{font-size:11px;color:var(--ink3);margin-top:3px}
+  .toggle{display:flex;align-items:center;gap:11px;padding:11px;border:1px solid var(--border);border-radius:9px;margin:7px 0;background:var(--card)}
+  .sw{width:36px;height:20px;border-radius:999px;background:var(--emerald-dim);position:relative;flex-shrink:0}
+  .sw::after{content:"";position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+  .sw.off{background:#52525b}.sw.off::after{right:auto;left:2px}
+  .tg .tt{font-weight:600;font-size:13px}.tg .ts{font-size:11px;color:var(--ink3)}
+  .bar{height:8px;border-radius:999px;background:var(--border);overflow:hidden;margin-top:6px}
+  .bar i{display:block;height:100%;background:var(--emerald);border-radius:999px}
+  .chip{display:inline-block;font-family:monospace;font-size:12px;background:rgba(251,191,36,.16);color:var(--amber);border:1px solid rgba(251,191,36,.4);border-radius:5px;padding:1px 6px;cursor:pointer}
+  .annot{position:relative;padding-left:30px;margin:8px 0;font-size:13px;color:var(--ink2)}
+  .annot::before{content:attr(data-n);position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:var(--amber);color:#1a1400;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center}
+
+  .privacy{background:linear-gradient(180deg,rgba(52,211,153,.08),transparent);border:1px solid rgba(52,211,153,.3);border-radius:var(--r);padding:24px;margin:30px 0}
+  .privacy h3{color:var(--emerald);font-size:18px;margin-bottom:10px}
+  .privacy table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+  .privacy td,.privacy th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border)}
+  .privacy th{color:var(--ink3);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  footer{text-align:center;color:var(--ink3);font-size:13px;padding:40px 0 60px;border-top:1px solid var(--border);margin-top:30px}
+  @media(max-width:560px){.cards2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo"><span class="dot"></span> VideoDoc</div>
+    <h1>Turn a screen recording into<br><span>a step-by-step guide</span></h1>
+    <p>Upload a recording, VideoDoc watches it and writes the documentation for you — runs on your own computer, nothing leaves your device.</p>
+    <div class="who"><span>👋 <b>For everyone</b> — no tech skills needed</span><span>🛠️ <b>For tech folks</b> — how it works under each step</span></div>
+  </div>
+</header>
+
+<div class="wrap steps">
+
+  <!-- 1 -->
+  <div class="step">
+    <h2><span class="num">1</span> <span>Open VideoDoc<small>The home screen</small></span></h2>
+    <div class="shot"><img src="guide-assets/guide-01-landing.png" alt="VideoDoc home screen">
+      <div class="cap">The VideoDoc home page</div></div>
+    <div class="do"><span class="ic">→</span><div>Click <b>“Video → Docs”</b> to begin. (The other button, “Doc → Chat”, lets you ask questions about a finished guide.)</div></div>
+    <div class="tech"><b>Under the hood:</b> a static React + Vite app. The badges at the bottom — <i>0 bytes uploaded · ~96% · Offline</i> — reflect that everything runs in your browser; no server, no account.</div>
+  </div>
+
+  <!-- 2 -->
+  <div class="step">
+    <h2><span class="num">2</span> <span>Add your video<small>Drag &amp; drop, or click to pick a file</small></span></h2>
+    <div class="shot"><img src="guide-assets/guide-02-upload.png" alt="Upload screen">
+      <div class="cap">Drop your video here — code files &amp; a reference doc are optional</div></div>
+    <div class="do"><span class="ic">→</span><div>Drop your screen recording onto <b>“Upload Video”</b> (.mp4, .mov, .webm). The other two boxes are optional and most people skip them.</div></div>
+    <div class="tech"><b>Under the hood:</b> the file never leaves your machine. The video is read locally to pull out frames and the audio track.</div>
+  </div>
+
+  <!-- 3 -->
+  <div class="step">
+    <h2><span class="num">3</span> <span>It reads your video<small>Automatic — just wait</small></span></h2>
+    <div class="mock">
+      <div class="mrow"><span class="pill ok">✓</span><span class="lab">Extract Frames</span><span class="meta">88 frames</span></div>
+      <div class="mrow"><span class="pill ok">✓</span><span class="lab">Extract Audio</span><span class="meta">16kHz mono</span></div>
+      <div class="mrow"><span class="pill ok">✓</span><span class="lab">Transcribe Audio</span><span class="meta">48 segments</span></div>
+      <div class="mrow"><span class="pill teal">●</span><span class="lab">Read Screen (OCR)</span><span class="meta">reading text…</span>
+        <div class="bar" style="flex-basis:100%;margin-top:0;margin-left:10px;max-width:90px"><i style="width:60%"></i></div></div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:8px">Overall progress only moves <b style="color:var(--emerald)">forward</b> — it never jumps backward.</div>
+    </div>
+    <div class="do"><span class="ic">→</span><div>Nothing to do here — grab a coffee. VideoDoc pulls out screenshots, cleans the audio, writes the transcript, and reads the on-screen text.</div></div>
+    <div class="tech"><b>Under the hood:</b> frame sampling adapts to video length; audio is denoised before <i>Whisper</i> transcribes it; <i>Tesseract</i> OCR reads the actual UI text so the AI names buttons correctly.</div>
+  </div>
+
+  <!-- 4 — AI settings -->
+  <div class="step">
+    <h2><span class="num">4</span> <span>Choose the AI &amp; accuracy options<small>The “Configure Annotation” window</small></span></h2>
+    <div class="mock">
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">AI BACKEND</div>
+      <div class="mrow" style="border-color:var(--emerald);background:rgba(52,211,153,.08)"><span>👁️</span><div><div class="lab">Built-in AI (gemma3) · Recommended</div><div style="font-size:11px;color:var(--ink3)">Runs inside the app — best accuracy, fully offline.</div></div><span class="pill ok meta">✓ Ready</span></div>
+      <div class="cards2">
+        <div class="pick sel"><div class="t">🌐 WebLLM</div><div class="s">Runs in browser. First run downloads a model.</div></div>
+        <div class="pick"><div class="t">🖥️ Ollama</div><div class="s">Uses your local Ollama models.</div></div>
+      </div>
+      <div style="margin:6px 0"><span class="pill teal">⚡ Test my system</span> <span style="font-size:11px;color:var(--ink3)">→ picks the best model your computer can run</span></div>
+      <div style="font-size:12px;color:var(--ink3);margin:10px 0 4px">ACCURACY</div>
+      <div class="toggle tg"><span class="sw"></span><div><div class="tt">Self-verify each step</div><div class="ts">AI re-checks every step against the screen — far fewer made-up steps.</div></div></div>
+      <div class="toggle tg"><span class="sw"></span><div><div class="tt">Consolidate procedure</div><div class="ts">Tidies titles &amp; merges duplicates into one clean guide.</div></div></div>
+    </div>
+    <div class="do"><span class="ic">→</span><div>Most people: leave everything as-is and click <b>“Generate Procedure”</b>. The two green switches (Self-verify &amp; Consolidate) are <b>ON by default</b> for the best quality.</div></div>
+    <div class="tech"><b>Under the hood:</b> three engines share one code path. <i>Built-in (gemma3)</i> appears only in the desktop app. <i>“Test my system”</i> probes your GPU/RAM and auto-selects a model that fits — and warns in plain English if you pick one too heavy.</div>
+  </div>
+
+  <!-- 5 — annotation -->
+  <div class="step">
+    <h2><span class="num">5</span> <span>It writes the steps<small>The AI annotation pass</small></span></h2>
+    <div class="mock">
+      <div class="mrow"><span class="pill ok">✓</span><span class="lab">Load AI Model</span><span class="meta">gemma3 · 👁 vision</span></div>
+      <div class="mrow"><span class="pill teal">●</span><span class="lab">Write Procedure Steps</span><span class="meta">14 / 22</span>
+        <div class="bar" style="flex-basis:100%;margin-left:10px;max-width:90px"><i style="width:64%"></i></div></div>
+      <div class="mrow"><span class="pill" style="background:var(--border);color:var(--ink3)">○</span><span class="lab" style="color:var(--ink3)">Self-Verify Steps</span></div>
+      <div class="mrow"><span class="pill" style="background:var(--border);color:var(--ink3)">○</span><span class="lab" style="color:var(--ink3)">Consolidate Procedure</span></div>
+      <div class="mrow"><span class="pill" style="background:var(--border);color:var(--ink3)">○</span><span class="lab" style="color:var(--ink3)">Purpose · Summary · FAQ · Flow</span></div>
+    </div>
+    <div class="do"><span class="ic">→</span><div>Still hands-off. You can watch each step appear. This is the slow part — bigger/clearer videos take longer.</div></div>
+    <div class="tech"><b>Under the hood:</b> the recording is split into time windows; each is grounded to the <i>real app</i> (identified once from the screen, never guessed) + the on-screen text, then written, fact-checked, and merged. Meeting chatter (“you’re muted”) and risky mis-hearings are filtered out automatically.</div>
+  </div>
+
+  <!-- 6 — review & edit -->
+  <div class="step">
+    <h2><span class="num">6</span> <span>Review &amp; fix anything<small>You don’t need to know HTML — just click and type</small></span></h2>
+    <div class="mock">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:12px;color:var(--ink3)">PROCEDURE STEPS · tap any step to edit</span><span class="pill warn">⚠ 3 to verify</span></div>
+      <div class="mrow"><div><div class="lab" style="color:var(--teal)">Open the <span class="chip">BW</span> analysis</div><div style="font-size:12px;color:var(--ink2);margin-top:3px">1. Go to the Analysis tab &nbsp; 2. Select the R&amp;D query</div></div><span class="meta">✎ Edit</span></div>
+      <div style="margin-top:10px;padding:10px;border:1px solid rgba(251,191,36,.3);border-radius:8px;background:rgba(251,191,36,.06)">
+        <div style="font-size:12px;color:var(--amber);margin-bottom:6px">Check these short codes / acronyms — fix once, it changes everywhere</div>
+        <div style="display:flex;align-items:center;gap:8px"><span class="chip">BW</span><span style="font-size:11px;color:var(--ink3)">×4</span>
+          <span style="flex:1;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--ink3);font-size:12px">Business Warehouse</span>
+          <span class="pill ok">Replace all</span></div>
+      </div>
+    </div>
+    <div class="annot" data-n="A">Click any <b>highlighted code</b> (like <span class="chip">BW</span>) — VideoDoc flags acronyms it isn’t sure about so you can confirm them.</div>
+    <div class="annot" data-n="B">Type the correct meaning and hit <b>“Replace all”</b> — it fixes that word across the <i>whole</i> document at once.</div>
+    <div class="annot" data-n="C">Click <b>“✎ Edit”</b> on any step to change the title, add or remove actions, or fix wording.</div>
+    <div class="do"><span class="ic">→</span><div>This is your safety net: the AI gives you a draft, you fix the few highlighted bits in a minute — no HTML, no formatting, just click and type.</div></div>
+    <div class="tech"><b>Under the hood:</b> edits update the document in place, so the export always reflects your changes. Acronyms are detected and de-duplicated; one correction is a whole-document find-and-replace.</div>
+  </div>
+
+  <!-- 7 — export -->
+  <div class="step">
+    <h2><span class="num">7</span> <span>Export your guide<small>One click — pick a format</small></span></h2>
+    <div class="mock">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <span class="pill ok" style="font-size:13px;padding:7px 16px">⬇ PDF</span>
+        <span class="pill teal" style="font-size:13px;padding:7px 16px">⬇ HTML</span>
+        <span class="pill" style="font-size:13px;padding:7px 16px;background:var(--card2);color:var(--ink2);border:1px solid var(--border)">⬇ Word (.docx)</span>
+      </div>
+    </div>
+    <div class="do"><span class="ic">→</span><div>Choose <b>PDF</b> to share, <b>HTML</b> for a clickable web guide, or <b>Word</b> to keep editing in Office. Your screenshots are embedded automatically.</div></div>
+    <div class="tech"><b>Under the hood:</b> the export is generated locally from your (edited) steps + insights — a styled, printable document with each step’s screenshot, a summary, FAQ and a flow diagram.</div>
+  </div>
+
+  <div class="privacy">
+    <h3>🔒 Your data never leaves your computer</h3>
+    <p style="color:var(--ink2)">Everything above happens on your own machine. There is no cloud, no account, no upload.</p>
+    <table>
+      <tr><th>When</th><th>What happens</th><th>Data leaves?</th></tr>
+      <tr><td>Making the guide</td><td>Runs on your computer</td><td style="color:var(--emerald)">No — fully local</td></tr>
+      <tr><td>First-time model download</td><td>A model file comes <i>to</i> you (once)</td><td style="color:var(--emerald)">No</td></tr>
+    </table>
+  </div>
+
+</div>
+
+<footer>VideoDoc — record it, and we’ll document it. · Private · On-device · No account</footer>
+
+</body>
+</html>

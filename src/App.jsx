@@ -17,6 +17,8 @@ import useOCR from "./hooks/useOCR"
 import useVantaHalo from "./hooks/useVantaHalo"
 import { webLLMLabel, isWebLLMVision, ollamaModelHasVision } from "./lib/llm"
 import { generateInsights } from "./lib/insights"
+import { consolidateProcedure, verifyProcedure } from "./lib/refine"
+import { scrubSensitive } from "./lib/skillPrompt"
 import { fixTranscriptChunks } from "./lib/transcriptFixups"
 
 const INITIAL_STEPS = [
@@ -26,6 +28,8 @@ const INITIAL_STEPS = [
   { id: 'ocr',        label: 'Read Screen (OCR)', status: 'pending', detail: null, pct: null, step: null, total: null },
   { id: 'loadmodel',  label: 'Load AI Model',     status: 'pending', detail: null, pct: null },
   { id: 'annotate',   label: 'Write Procedure Steps', status: 'pending', detail: null, pct: null, step: null, total: null, etaMs: null },
+  { id: 'verify',     label: 'Self-Verify Steps', status: 'pending', detail: null, pct: null, step: null, total: null, etaMs: null },
+  { id: 'consolidate',label: 'Consolidate Procedure', status: 'pending', detail: null },
   { id: 'insights',   label: 'Purpose · Summary · FAQ · Flow', status: 'pending', detail: null },
 ]
 
@@ -41,6 +45,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [ocrFrameTexts, setOcrFrameTexts] = useState([])
   const [toolsUsed, setToolsUsed] = useState([])
+  const [sceneCuts, setSceneCuts] = useState([]) // pixel-level screen-change timestamps (step boundaries)
   const [docTitle, setDocTitle] = useState("")
   const [companyName, setCompanyName] = useState("")
   const [insights, setInsights] = useState(null)
@@ -116,7 +121,8 @@ export default function App() {
 
       updateStep('transcribe', { status: 'active', detail: 'Loading model...', startedAt: Date.now() })
       const result = await transcribe(audio, sampleRate)
-      const chunks = fixTranscriptChunks(result?.chunks ?? []) // correct known domain mis-hearings
+      const chunks = fixTranscriptChunks(result?.chunks ?? [])           // correct known domain mis-hearings
+        .map(c => ({ ...c, text: scrubSensitive(c.text) }))               // scrub ASR mis-hears like "Hitler" before anything sees them
       setTranscriptChunks(chunks)
       if (cancelRef.current || result?.cancelled) {
         updateStep('transcribe', { status: 'error', detail: `Cancelled · ${chunks.length} segments kept`, endedAt: Date.now() })
@@ -127,9 +133,10 @@ export default function App() {
       // OCR: read on-screen text from frames → captures exact UI labels + detects tools used
       updateStep('ocr', { status: 'active', detail: 'Reading on-screen text...', startedAt: Date.now() })
       const transcriptText = chunks.map(c => c.text).join(' ')
-      const { frameTexts, tools } = await runOCR(extracted, transcriptText,
+      const { frameTexts, tools, sceneCuts: cuts } = await runOCR(extracted, transcriptText,
         (i, total) => updateStep('ocr', { step: i + 1, total }))
       setOcrFrameTexts(frameTexts)
+      setSceneCuts(cuts || [])
       setToolsUsed(tools)
       updateStep('ocr', { status: 'done', detail: tools.length ? `Tools: ${tools.join(', ')}` : `${frameTexts.length} frames read`, endedAt: Date.now() })
 
@@ -144,7 +151,7 @@ export default function App() {
     }
   }
 
-  const handleStartAnnotation = async (aiMode, sections, model, title, company) => {
+  const handleStartAnnotation = async (aiMode, sections, model, title, company, refine = {}) => {
     setShowAISettings(false)
     setError(null)
     cancelRef.current = false
@@ -153,21 +160,28 @@ export default function App() {
     setInsights(null)
     setAiMode(aiMode)
     setAiModel(model)
-    const isWeb = aiMode !== 'ollama'
-    // Vision: does the chosen model take screenshots? (Phi-3.5-Vision / gemma3…)
-    const useVision = isWeb ? isWebLLMVision(model) : await ollamaModelHasVision(model)
+    // Server-side engines (Ollama, the bundled desktop engine) load the model
+    // themselves; only WebLLM streams the load into the browser.
+    const isServer = aiMode === 'ollama' || aiMode === 'local'
+    const isWeb = !isServer
+    // Vision: does the chosen model take screenshots? Bundled gemma3 is multimodal,
+    // so vision is always on for "local".
+    const useVision = aiMode === 'local' ? true
+      : isWeb ? isWebLLMVision(model)
+      : await ollamaModelHasVision(model)
     annotateStartRef.current = null // set when token generation actually begins
 
     // "Load AI Model" step: tracked live for WebLLM (download → GPU → compile →
-    // ready); Ollama loads server-side so we just mark it ready.
+    // ready); server engines load on their own so we just mark it ready.
     if (isWeb) {
       updateStep('loadmodel', { status: 'active', detail: 'Preparing browser AI...', pct: null, startedAt: Date.now(), endedAt: null })
     } else {
       annotateStartRef.current = Date.now()
-      updateStep('loadmodel', { status: 'done', detail: `Ollama · ${model || 'model'}`, startedAt: Date.now(), endedAt: Date.now() })
+      const engineLabel = aiMode === 'local' ? 'Bundled engine' : 'Ollama'
+      updateStep('loadmodel', { status: 'done', detail: `${engineLabel} · ${model || 'gemma3'}`, startedAt: Date.now(), endedAt: Date.now() })
     }
 
-    const modelLabel = (isWeb ? `WebLLM · ${webLLMLabel(model)}` : (model || 'ollama')) + (useVision ? ' · 👁 vision' : '')
+    const modelLabel = (isWeb ? `WebLLM · ${webLLMLabel(model)}` : aiMode === 'local' ? 'Bundled · gemma3' : (model || 'ollama')) + (useVision ? ' · 👁 vision' : '')
     updateStep('annotate', {
       status: isWeb ? 'pending' : 'active',
       step: 0,
@@ -210,13 +224,62 @@ export default function App() {
         ocrFrameTexts,
         () => cancelRef.current,
         useVision,
+        sceneCuts,
       )
-      setAnnotatedDocs(docs)
       if (cancelRef.current) {
+        setAnnotatedDocs(docs)
         updateStep('annotate', { status: 'error', detail: `Cancelled · ${docs.filter(d => d.annotation).length} done`, endedAt: Date.now() })
         return
       }
       updateStep('annotate', { status: 'done', detail: `${docs.length} entries annotated`, endedAt: Date.now() })
+
+      // The annotator's LLM app-id READ the actual screen to name the app —
+      // more reliable than the OCR regex sweep, which sees "SAP" in a garbled
+      // URL and reports the generic product. Put the specific name first and
+      // drop the generic hit it supersedes. Local var (not state) so the
+      // insights call below sees it too.
+      let effectiveTools = toolsUsed
+      if (docs.appName) {
+        effectiveTools = [docs.appName, ...toolsUsed.filter(
+          (t) => t !== docs.appName && !docs.appName.toLowerCase().startsWith(t.toLowerCase()),
+        )]
+        setToolsUsed(effectiveTools)
+      }
+
+      let finalDocs = docs
+
+      // Self-verify pass: fact-check every step against its own evidence and drop
+      // anything the model can't actually support. Best-effort.
+      if (refine.selfVerify && finalDocs.length > 0) {
+        updateStep('verify', { status: 'active', step: 0, total: finalDocs.length, detail: 'Re-checking each step against the screen…', startedAt: Date.now() })
+        const before = finalDocs.length
+        try {
+          finalDocs = await verifyProcedure(
+            finalDocs, aiMode, model, useVision,
+            (msg) => updateStep('verify', { detail: msg }),
+            (i, total) => updateStep('verify', { step: i, total }),
+            () => cancelRef.current,
+          )
+        } catch { /* keep drafts */ }
+        const dropped = before - finalDocs.length
+        updateStep('verify', { status: 'done', detail: dropped > 0 ? `${finalDocs.length} kept · ${dropped} unsupported removed` : `${finalDocs.length} verified`, endedAt: Date.now() })
+      } else {
+        updateStep('verify', { status: 'done', detail: 'Skipped', endedAt: Date.now() })
+      }
+
+      // Consolidation pass: tidy titles across the whole procedure and fold
+      // adjacent duplicate phases so it reads as one coherent SOP. Best-effort.
+      if (refine.consolidate && finalDocs.length > 1) {
+        updateStep('consolidate', { status: 'active', detail: 'Tidying titles & merging duplicates…', startedAt: Date.now() })
+        try {
+          finalDocs = await consolidateProcedure(finalDocs, aiMode, model, (m) => updateStep('consolidate', { detail: m }), () => cancelRef.current)
+        } catch { /* keep as-is */ }
+        updateStep('consolidate', { status: 'done', detail: `${finalDocs.length} coherent steps`, endedAt: Date.now() })
+      } else {
+        updateStep('consolidate', { status: 'done', detail: 'Skipped', endedAt: Date.now() })
+      }
+
+      setAnnotatedDocs(finalDocs)
 
       // Insights pass: facilitator summary, FAQ (incl. questions asked in the
       // meeting) and a Mermaid flow diagram. Best-effort — a failure here must
@@ -224,10 +287,10 @@ export default function App() {
       updateStep('insights', { status: 'active', detail: 'Writing summary…', startedAt: Date.now() })
       try {
         const result = await generateInsights(
-          docs, transcriptChunks, aiMode, model,
+          finalDocs, transcriptChunks, aiMode, model,
           (msg) => updateStep('insights', { detail: msg }),
           () => cancelRef.current,
-          toolsUsed,
+          effectiveTools,
         )
         setInsights(result)
         const bits = [
@@ -258,6 +321,57 @@ export default function App() {
     setActiveFrame(frameIndex)
     setSeekTo(timestamp)
   }
+
+  // ── In-app editing (so a non-technical user can fix the AI's text & export) ──
+  const stepToPlain = (step) => !step ? "" : [
+    step.title,
+    ...(step.steps || []).map((s, i) => `${i + 1}. ${s}`),
+    step.result ? `Result: ${step.result}` : "",
+    step.note ? `Note: ${step.note}` : "",
+  ].filter(Boolean).join("\n")
+
+  // Save an edited step in place.
+  const handleEditStep = useCallback((index, newStep) => {
+    setAnnotatedDocs(prev => prev.map((d, i) =>
+      i === index ? { ...d, step: newStep, annotation: stepToPlain(newStep) } : d))
+  }, [])
+
+  // Reorder a step (dir: -1 up, +1 down) and remove a step. The AI gets the
+  // order right most of the time, but the human editing the doc has the final
+  // say, and edits here flow into every export.
+  const handleMoveStep = useCallback((index, dir) => {
+    setAnnotatedDocs(prev => {
+      const j = index + dir
+      if (j < 0 || j >= prev.length) return prev
+      const next = [...prev]
+      ;[next[index], next[j]] = [next[j], next[index]]
+      return next
+    })
+  }, [])
+
+  const handleDeleteStep = useCallback((index) => {
+    setAnnotatedDocs(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
+  // One correction applied everywhere — fix a word/acronym once, it changes across
+  // the whole document (whole-word, case-sensitive).
+  const handleReplaceEverywhere = useCallback((find, replace) => {
+    const f = (find || "").trim()
+    if (!f || f === replace) return
+    const re = new RegExp(`\\b${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g")
+    const fix = (s) => typeof s === "string" ? s.replace(re, replace) : s
+    setAnnotatedDocs(prev => prev.map(d => {
+      if (!d.step) return d
+      const st = {
+        ...d.step,
+        title: fix(d.step.title),
+        steps: (d.step.steps || []).map(fix),
+        result: fix(d.step.result),
+        note: fix(d.step.note),
+      }
+      return { ...d, step: st, annotation: stepToPlain(st) }
+    }))
+  }, [])
 
   const isAnnotating = pipelineSteps?.find(s => s.id === 'annotate')?.status === 'active'
   const vantaRef = useVantaHalo()
@@ -350,11 +464,15 @@ export default function App() {
                   transcriptChunks={transcriptChunks}
                   annotatedDocs={annotatedDocs}
                   onSeek={handleDocSeek}
+                  onEditStep={handleEditStep}
+                  onMoveStep={handleMoveStep}
+                  onDeleteStep={handleDeleteStep}
+                  onReplaceEverywhere={handleReplaceEverywhere}
                 />
               </div>
             </div>
 
-            {insights && <InsightsPanel insights={insights} />}
+            {insights && <InsightsPanel insights={insights} onChange={setInsights} />}
 
             <ExportBar
               annotatedDocs={annotatedDocs}

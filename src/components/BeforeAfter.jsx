@@ -245,7 +245,7 @@ function PDFPreview() {
               <span style={{ fontSize: 8, color: '#fff', fontWeight: 800 }}>{i+1}</span>
             </div>
             <div>
-              <div style={{ height: 6, borderRadius: 2, background: '#374151', width: `${55 + i * 10}%`, marginBottom: 3, animation: `ba-pdf-line 0.6s ease ${i * 0.2 + 0.3}s forwards`, width: 0 }} />
+              <div style={{ height: 6, borderRadius: 2, background: '#374151', marginBottom: 3, animation: `ba-pdf-line 0.6s ease ${i * 0.2 + 0.3}s forwards`, width: 0 }} />
               <div style={{ height: 4, borderRadius: 2, background: '#d1d5db', width: `${40 + i * 8}%` }} />
             </div>
           </div>

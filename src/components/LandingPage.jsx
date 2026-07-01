@@ -1014,12 +1014,13 @@ export default function LandingPage() {
             </div>
             <h2 style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3rem)', fontWeight: 700, letterSpacing: '-0.025em' }}>
               <span style={{ color: 'rgba(255,255,255,0.3)' }}>v1</span>{' → '}
-              <span style={{ color: 'rgba(255,255,255,0.5)' }}>v2</span>{' → '}
-              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #22d3ee, #a78bfa, #3f62ff)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>v3</span>
+              <span style={{ color: 'rgba(255,255,255,0.45)' }}>v2</span>{' → '}
+              <span style={{ color: 'rgba(255,255,255,0.6)' }}>v3</span>{' → '}
+              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #22d3ee, #a78bfa, #3f62ff)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'lp-shimmer 4s linear infinite' }}>v4</span>
             </h2>
           </div>
 
-          <div className="lp-v-split" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+          <div className="lp-v-split" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14 }}>
             {/* V1 */}
             <div style={{ borderRadius: 18, padding: '24px 22px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.32)', marginBottom: 16 }}>v1 · the basics</div>
@@ -1055,9 +1056,8 @@ export default function LandingPage() {
             </div>
 
             {/* V3 */}
-            <div className="lp-card" style={{ position: 'relative', borderRadius: 18, padding: '24px 22px', background: 'linear-gradient(160deg, rgba(63,98,255,0.14), rgba(167,139,250,0.07))', border: '1px solid rgba(63,98,255,0.42)', animation: 'lp-pulse 4s ease-in-out infinite' }}>
-              <div style={{ position: 'absolute', top: -11, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', background: 'linear-gradient(135deg, #3f62ff, #a78bfa)', padding: '4px 11px', borderRadius: 100, animation: 'lp-badge-glow 2.6s ease-in-out infinite' }}>Biggest leap yet</div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9db0ff', marginBottom: 16 }}>v3 · now</div>
+            <div style={{ borderRadius: 18, padding: '24px 22px', background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.13)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: 16 }}>v3 · then</div>
               {[
                 ['👁', 'It sees the screen, not just OCR text'],
                 ['🎙', 'A far sharper transcript with Whisper Small'],
@@ -1065,6 +1065,24 @@ export default function LandingPage() {
                 ['🎬', 'Crisp WebM step clips, sharper than GIFs'],
                 ['❓', 'RAG-grounded FAQ and a clean phased flow'],
                 ['🧭', 'Steps name the app, ribbon and tab'],
+              ].map(([ic, t], i) => (
+                <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '7px 0', fontSize: '0.86rem', color: 'rgba(255,255,255,0.72)' }}>
+                  <span style={{ flexShrink: 0, opacity: 0.8 }}>{ic}</span>{t}
+                </div>
+              ))}
+            </div>
+
+            {/* V4 */}
+            <div className="lp-card" style={{ position: 'relative', borderRadius: 18, padding: '24px 22px', background: 'linear-gradient(160deg, rgba(63,98,255,0.14), rgba(167,139,250,0.07))', border: '1px solid rgba(63,98,255,0.42)', animation: 'lp-pulse 4s ease-in-out infinite' }}>
+              <div style={{ position: 'absolute', top: -11, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', background: 'linear-gradient(135deg, #3f62ff, #a78bfa)', padding: '4px 11px', borderRadius: 100, animation: 'lp-badge-glow 2.6s ease-in-out infinite' }}>The trust release</div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9db0ff', marginBottom: 16 }}>v4 · now</div>
+              {[
+                ['🔍', 'Looks at the screen first, then writes'],
+                ['🎯', 'A new step exactly where the screen changed'],
+                ['🛡', 'Nothing made up: no invented steps, names or conclusions'],
+                ['✍️', 'Fix, reorder or delete steps before you share'],
+                ['⏱', 'Tells you how long it will take, shows steps as it works'],
+                ['💻', 'Use it on the web, or fully offline at the office'],
               ].map(([ic, t], i) => (
                 <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '7px 0', fontSize: '0.86rem', color: 'rgba(255,255,255,0.88)' }}>
                   <span style={{ flexShrink: 0 }}>{ic}</span>{t}
@@ -1074,12 +1092,12 @@ export default function LandingPage() {
           </div>
 
           <p style={{ textAlign: 'center', maxWidth: 760, margin: '32px auto 0', fontSize: '1.06rem', lineHeight: 1.75, color: 'rgba(255,255,255,0.64)' }}>
-            <span style={{ background: 'linear-gradient(90deg,#7b96ff,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}>Why it's the biggest leap:</span>{' '}
-            for the first time the AI <em>watches the screen and hears every word</em>, just like a person. So a one-hour recording becomes a procedure you can actually follow, <em>without ever opening the video.</em>
+            <span style={{ background: 'linear-gradient(90deg,#7b96ff,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}>Why v4 matters:</span>{' '}
+            v3 taught it to <em>see and hear like a person</em>. v4 makes it <em>honest</em>: everything it writes is checked against what was really said and shown on screen, so you can share the document <em>without rewatching the video yourself.</em>
           </p>
         </section>
 
-        {/* ── What's next in v4 (coming soon) ──────────────────── */}
+        {/* ── What's next in v5 (coming soon) ──────────────────── */}
         <section className="lp-section" style={{ padding: '40px 24px 90px', maxWidth: 940, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#7b96ff', marginBottom: 12 }}>
@@ -1087,21 +1105,21 @@ export default function LandingPage() {
             </div>
             <h2 style={{ fontSize: 'clamp(1.8rem, 4.2vw, 2.8rem)', fontWeight: 700, letterSpacing: '-0.025em' }}>
               What's next in{' '}
-              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>v4</span>
+              <span style={{ background: 'linear-gradient(90deg, #3f62ff, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>v5</span>
               <span style={{ marginLeft: 12, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', background: 'rgba(123,150,255,0.22)', border: '1px solid rgba(123,150,255,0.45)', padding: '4px 12px', borderRadius: 100, verticalAlign: 'middle', whiteSpace: 'nowrap', animation: 'lp-badge-glow 2.6s ease-in-out infinite' }}>Coming soon</span>
             </h2>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
             {[
-              ['Smart screenshots', 'Each image auto-zooms and crops to the exact spot that was clicked, so the reader sees precisely where the action happened.'],
-              ['Consolidation pass', 'A final pass that reorganises the whole procedure for even cleaner, more coherent steps with less overlap.'],
-              ['Editable output', 'Edit, reorder and remove steps inside the app before exporting, for a quick human polish.'],
-              ['Sharper vision', 'Higher-resolution frames so the model reads small interface text, like dense spreadsheets, more reliably.'],
-              ['Meeting Minutes mode', 'Optional speaker separation: who said what, and who led the session.'],
-              ['More languages', 'Support for recordings that are not in English.'],
-              ['Custom branding', 'Add your own logo, colours and templates to the exported document.'],
-              ['Self-verify mode', 'The AI re-checks its own steps against the video to catch any slips before you share.'],
+              ['Smart screenshots', 'Every image zooms in on the exact spot that was clicked, so the reader sees precisely where to act.'],
+              ['Multi-window awareness', 'Open a second app mid-recording? The steps follow along without mixing the two screens up.'],
+              ['Sharper vision', 'Reads tiny text, dense tables and crowded toolbars more reliably.'],
+              ['Better with accents', 'Understands accented and technical speech better by learning the words it can see on screen.'],
+              ['Meeting Minutes mode', 'Who said what, and who led the session.'],
+              ['More languages', 'Recordings in languages other than English.'],
+              ['Custom branding', 'Your logo and colours, applied as a clean document theme.'],
+              ['Measured accuracy', 'Every update is tested against real recordings before release, so quality only moves up.'],
             ].map(([title, desc], i) => (
               <div key={i} style={{ borderRadius: 16, padding: '22px 20px', background: 'rgba(255,255,255,0.025)', border: '1px dashed rgba(123,150,255,0.35)' }}>
                 <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', marginBottom: 8 }}>{title}</div>

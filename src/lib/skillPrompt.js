@@ -127,7 +127,7 @@ export function isFillerNote(note) {
   const n = (note || "").trim()
   if (!n) return true
   if (n.split(/\s+/).length < 3) return true
-  return /^(this (step|action|process|part|view|screen)|the (initial|primary|first|main|next|final) (action|step)|the user (is|then|will|now|has|navigates)|it (then |simply |essentially )?(initiates|expands|confirms|establishes|focuses|opens|navigates|displays|shows|allows|enables|begins|starts))\b/i.test(n)
+  return /^(this (step|action|process|part|view|screen)|the (initial|primary|first|main|next|final) (action|step)|the user (is|then|will|now|has|navigates)|the (speaker|trainer|presenter|instructor) (is|was|then)|it (then |simply |essentially )?(initiates|expands|confirms|establishes|focuses|opens|navigates|displays|shows|allows|enables|begins|starts))\b/i.test(n)
 }
 
 // Remove the model's self-referential meta-commentary that sometimes leaks into a
@@ -157,6 +157,16 @@ function stripGarbledIds(s) {
 // Clean one field through the full pipeline (meta commentary, garbled IDs).
 function cleanField(s) { return stripMeta(stripGarbledIds(typeof s === "string" ? s : "")) }
 
+// An action must actually SAY something. After cleanup, a dangling verb with an
+// empty target ("Click on ''", "Select the") is worse than no action at all.
+function isRealAction(s) {
+  if (typeof s !== "string") return false
+  const t = s.replace(/[''""'"]+/g, "").trim() // drop straight AND curly quotes
+  if (t.length <= 2) return false
+  if (/^(click|select|open|choose|press|tap|go to|navigate to)( on| the| a| to)?[\s.:]*$/i.test(t)) return false
+  return true
+}
+
 // JSON-first parse: with constrained decoding the reply IS this object. Returns
 // null (not skip) when no JSON is found so the text parser can try instead.
 function tryParseStepJSON(t) {
@@ -169,8 +179,9 @@ function tryParseStepJSON(t) {
   if (o.skip === true) return { skip: true }
   const steps = (Array.isArray(o.steps) ? o.steps : [])
     .filter((s) => typeof s === "string")
+    .map((s) => s.replace(/^\s*\d+[.\)]\s*/, "")) // model sometimes numbers inside the JSON strings too
     .map((s) => tidyLine(cleanField(s)))
-    .filter((s) => s.length > 2)
+    .filter(isRealAction)
   const title = cleanField(o.title).replace(/["'.]+$/, "").trim()
   const result = cleanField(o.result)
   let note = cleanField(o.note)
@@ -201,7 +212,7 @@ export function parseProcedureStep(text) {
   if (note.length < 3 || /^(none|n\/a|na)$/i.test(note) || /^[-–—.\s]*$/.test(note)) note = '' // drop empty / dash-only
   if (isFillerNote(note)) note = '' // drop content-free narration of the step itself
   if (!steps.length && !title) return { skip: true }
-  return { skip: false, title: stripGarbledIds(title), steps: steps.map((s) => tidyLine(cleanField(s))).filter((s) => s.length > 2), result, note }
+  return { skip: false, title: stripGarbledIds(title), steps: steps.map((s) => tidyLine(cleanField(s))).filter(isRealAction), result, note }
 }
 
 // ── Noise gate ──
@@ -314,7 +325,7 @@ export function appContextPrefix(appName) {
 // ("Mute Microsoft Teams Call") or webcam name tiles ("Access Bajaj Profile",
 // "Spot Meeting Attendees", "Find Goss's Finance Info") into steps. These are
 // never part of the documented procedure — drop them after the fact.
-const LOGISTICS_TITLE = /\b(mute|unmute|microphone|teams call|zoom call|webcam|camera|join(ing)? the (call|meeting)|meeting attendees?|participants?|spot (meeting )?attendees|share (your |the )?screen)\b/i
+const LOGISTICS_TITLE = /\b(mute|unmute|microphone|teams call|zoom call|video call|voice call|(view|join)(ing)? (the |a )?(call|meeting)|webcam|camera|meeting attendees?|participants?|spot (meeting )?attendees|share (your |the )?screen)\b/i
 const PERSON_STEP = /^(access|open|find|locate|spot|view|select|identify)\s+[A-Z][a-z]+('s)?\s+(profile|finance|info|information|details|entry|name)/i
 export function isLogisticsStep(step) {
   if (!step) return false

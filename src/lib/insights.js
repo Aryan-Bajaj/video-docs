@@ -6,7 +6,7 @@
 //   - deterministic fallbacks so a section never comes back empty/broken.
 
 import { callOllama, callWebLLM, callLocalEngine, cleanLLMOutput } from "./llm"
-import { isFillerNote } from "./skillPrompt"
+import { isFillerNote, cleanTranscriptText } from "./skillPrompt"
 
 function callLLM(userMsg, systemPrompt, aiMode, model, onStatus, opts = {}) {
   if (aiMode === "ollama") return callOllama(userMsg, systemPrompt, model, opts)
@@ -200,7 +200,10 @@ async function genFAQ(outline, transcript, asked, transcriptChunks, aiMode, mode
   const faqs = []
   for (const q of questions) {
     const hits = retrieveChunks(q, transcriptChunks, 8)
-    const ctx = (hits.length ? hits : (transcriptChunks || []).slice(0, 6)).map((c) => c.text).join("\n")
+    // Scrub meeting chatter from the retrieved context so an answer never says
+    // things like "the user was directed to mute themselves".
+    const ctx = (hits.length ? hits : (transcriptChunks || []).slice(0, 6))
+      .map((c) => cleanTranscriptText(c.text)).filter(Boolean).join("\n")
     const system = `Answer this question about a procedure clearly and helpfully.
 Use the TRANSCRIPT EXCERPTS below as the PRIMARY source for any specifics (exact names, values, steps).
 You MAY add brief, accurate general knowledge about the concepts involved (e.g. cost centres, crosstabs, semantic tags) to make the answer clearer — but do NOT contradict the excerpts, do NOT invent specific names or values, and NEVER name a software product (such as Excel, Power BI, or Salesforce) that is not actually mentioned in the excerpts.

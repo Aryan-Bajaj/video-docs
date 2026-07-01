@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import VideoDocLogo from './VideoDocLogo'
+import { MAX_VIDEO_MB, MAX_VIDEO_MIN } from '../lib/limits'
 import ProductDemo from './ProductDemo'
 import BeforeAfter from './BeforeAfter'
 import DocChatDemo from './DocChatDemo'
@@ -37,6 +38,12 @@ const CSS = `
   @keyframes lp-dot-blink {
     0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
   }
+  @keyframes lp-marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .lp-marquee-track { animation: lp-marquee 28s linear infinite; }
+  .lp-marquee-track:hover { animation-play-state: paused; }
   @keyframes lp-badge-glow {
     0%, 100% { box-shadow: 0 0 12px rgba(63,98,255,0.3); }
     50%       { box-shadow: 0 0 24px rgba(63,98,255,0.6), 0 0 48px rgba(63,98,255,0.18); }
@@ -271,9 +278,35 @@ export default function LandingPage() {
         animation: leaving ? 'lp-leave 0.55s ease forwards' : 'none',
       }}>
 
+        {/* ── Announcement marquee (slim, right to left) ───────── */}
+        {(() => {
+          const limitPart = MAX_VIDEO_MIN || MAX_VIDEO_MB
+            ? `Videos up to ${MAX_VIDEO_MIN ? `${MAX_VIDEO_MIN} minutes` : ''}${MAX_VIDEO_MIN && MAX_VIDEO_MB ? ' or ' : ''}${MAX_VIDEO_MB ? `${MAX_VIDEO_MB} MB` : ''}`
+            : 'No account needed'
+          const msg = `Free to use  ·  ${limitPart}  ·  MP4, MOV or WEBM  ·  100% private, your video never leaves your device`
+          const item = (
+            <span style={{ display: 'inline-block', padding: '0 42px', fontSize: 12, fontWeight: 600, letterSpacing: '0.02em', color: 'rgba(190,205,255,0.92)', whiteSpace: 'nowrap' }}>
+              {msg}
+            </span>
+          )
+          return (
+            <div style={{
+              position: 'fixed', top: 0, left: 0, right: 0, zIndex: 101,
+              height: 32, display: 'flex', alignItems: 'center', overflow: 'hidden',
+              background: 'linear-gradient(90deg, rgba(63,98,255,0.28), rgba(167,139,250,0.24), rgba(63,98,255,0.28))',
+              borderBottom: '1px solid rgba(123,150,255,0.25)',
+              backdropFilter: 'blur(10px)',
+            }}>
+              <div className="lp-marquee-track" style={{ display: 'flex', width: 'max-content' }}>
+                {item}{item}{item}{item}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── Nav ─────────────────────────────────────────────── */}
         <nav className="lp-nav" style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+          position: 'fixed', top: 32, left: 0, right: 0, zIndex: 100,
           padding: '18px 40px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           background: 'rgba(35,21,60,0.75)',

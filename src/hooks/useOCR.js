@@ -138,6 +138,17 @@ async function selectKeyframes(frames, maxKeyframes = null) {
   return { keyframes: [...chosen].sort((a, b) => a - b).map((i) => cands[i]), sceneCuts }
 }
 
+// Webcam tile / participant labels (Teams renders "Lastname, Firstname (ORG-UNIT,
+// CODE)" on every tile, in every frame). These names leak into OCR and the model
+// then turns them into fake artifacts ("Das Neues Report"). They are NEVER part
+// of the documented application — drop any OCR line that looks like one.
+const TILE_LABEL = /\([A-Z]{1,4}[-–][A-Z]{2,6}(,\s*[A-Z]{2,8})?\)|^[A-Z][a-zA-Z]+(\s[A-Za-z]+){0,3},\s*[A-Z][a-zA-Z]+/
+function isTileLabelLine(line) {
+  const l = (line || "").trim()
+  if (l.length < 6 || l.length > 80) return false
+  return TILE_LABEL.test(l)
+}
+
 // Rebuild OCR text keeping only CONFIDENT words, preserving line structure. If a
 // frame is mostly low-confidence (garbled, unreadable screen), drop it entirely so
 // the model never tries to document noise like "EERNGRIEES". Defensive: falls back
@@ -156,7 +167,7 @@ function cleanOCR(data, minConf = 55) {
         if (good.length) lines.push(good.map((w) => w.text.trim()).join(" "))
       }
       if (total && kept < total * 0.35) return "" // mostly garbage → drop this frame
-      const out = lines.join("\n").trim()
+      const out = lines.filter((l) => !isTileLabelLine(l)).join("\n").trim()
       if (out) return out
     }
     if (Array.isArray(data?.words) && data.words.length) {

@@ -1119,6 +1119,8 @@ export default function LandingPage() {
               ['Meeting Minutes mode', 'Who said what, and who led the session.'],
               ['More languages', 'Recordings in languages other than English.'],
               ['Custom branding', 'Your logo and colours, applied as a clean document theme.'],
+              ['Resume anytime', 'A long video interrupted halfway? Pick up where it stopped instead of starting over.'],
+              ['Batch mode', 'Drop in several recordings and collect the finished documents one by one.'],
               ['Measured accuracy', 'Every update is tested against real recordings before release, so quality only moves up.'],
             ].map(([title, desc], i) => (
               <div key={i} style={{ borderRadius: 16, padding: '22px 20px', background: 'rgba(255,255,255,0.025)', border: '1px dashed rgba(123,150,255,0.35)' }}>

@@ -1116,7 +1116,6 @@ export default function LandingPage() {
               ['Multi-window awareness', 'Open a second app mid-recording? The steps follow along without mixing the two screens up.'],
               ['Sharper vision', 'Reads tiny text, dense tables and crowded toolbars more reliably.'],
               ['Better with accents', 'Understands accented and technical speech better by learning the words it can see on screen.'],
-              ['Meeting Minutes mode', 'Who said what, and who led the session.'],
               ['More languages', 'Recordings in languages other than English.'],
               ['Custom branding', 'Your logo and colours, applied as a clean document theme.'],
               ['Resume anytime', 'A long video interrupted halfway? Pick up where it stopped instead of starting over.'],

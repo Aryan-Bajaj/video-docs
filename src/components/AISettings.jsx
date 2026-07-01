@@ -3,33 +3,12 @@ import { X, Globe, Cpu, Plus, FileText, ChevronDown, Eye, Gauge, AlertTriangle }
 import { DEFAULT_SECTIONS } from "../hooks/useDocParser"
 import { WEBLLM_MODELS, DEFAULT_WEBLLM_MODEL, isWebLLMVision, ollamaModelHasVision, recommendModel, modelGB, localEngineStatus } from "../lib/llm"
 import { probeSystem } from "../lib/systemCheck"
+import { estimateRunMinutes } from "../lib/estimate"
 
 // Desktop build ships ONE engine (bundled llama.cpp + gemma3 vision) so a
 // non-technical user on an office laptop never has to choose or install
 // anything. WebLLM/Ollama choices exist only in the web build.
 const DESKTOP = import.meta.env.VITE_BUILD_TARGET === "desktop"
-
-// Honest upfront estimate of the whole run for THIS video on THIS backend, so
-// nobody thinks the app hung. Deliberately a wide range: hardware varies a lot.
-function estimateRunMinutes(durationSecs, mode, webModelId, selfVerify) {
-  if (!durationSecs) return null
-  const mem = navigator.deviceMemory || 8
-  const windows = Math.min(Math.max(12, Math.ceil(durationSecs / 45)), mem <= 4 ? 48 : 96)
-  // Rough per-window seconds by backend (vision costs more than text).
-  const perWindow =
-    mode === "ollama" ? 25 :
-    mode === "local" ? 30 :
-    isWebLLMVision(webModelId) ? 100 :
-    /1B/.test(webModelId || "") ? 20 : 45
-  let total = windows * perWindow
-  if (selfVerify) total *= 1.8                      // verify re-checks every step
-  total += durationSecs * 0.5                       // Whisper small (multithreaded WASM)
-  total += Math.min(140, Math.max(48, durationSecs / 40)) * 2 // OCR keyframes
-  total += 120                                      // insights + consolidation
-  const lo = Math.max(1, Math.round((total * 0.7) / 60))
-  const hi = Math.max(lo + 1, Math.round((total * 1.5) / 60))
-  return { lo, hi }
-}
 
 export default function AISettings({ onConfirm, onClose, suggestedSections, toolsUsed = [], videoDuration = 0 }) {
   const [mode, setMode] = useState(DESKTOP ? "local" : "webllm") // browser-first on web: works for everyone, no install

@@ -32,7 +32,7 @@ function StepIcon({ status }) {
   return <div className="w-5 h-5 rounded-full border border-zinc-700 shrink-0" />
 }
 
-export default function PipelineStatus({ steps }) {
+export default function PipelineStatus({ steps, etaHint = null }) {
   const [now, setNow] = useState(Date.now())
   // Highest overall % shown so far this run — the headline bar must only ever
   // move forward. WebLLM's loader reports progress that resets between phases
@@ -83,6 +83,11 @@ export default function PipelineStatus({ steps }) {
         <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
           <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${overallPct}%` }} />
         </div>
+        {/* Whole-run expectation, shown from the very first second so nobody
+            wonders if the app hung. Refined per backend in the AI settings. */}
+        {etaHint && !allDone && !anyError && (
+          <p className="text-[11px] text-zinc-500 mt-2">{etaHint}</p>
+        )}
       </div>
 
       {steps.map((step, i) => {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import Uploader from "./components/Uploader"
 import VideoPlayer from "./components/VideoPlayer"
 import DocPreview from "./components/DocPreview"
@@ -15,7 +15,8 @@ import useAnnotator from "./hooks/useAnnotator"
 import useDocParser from "./hooks/useDocParser"
 import useOCR from "./hooks/useOCR"
 import useVantaHalo from "./hooks/useVantaHalo"
-import { webLLMLabel, isWebLLMVision, ollamaModelHasVision } from "./lib/llm"
+import { webLLMLabel, isWebLLMVision, ollamaModelHasVision, DEFAULT_WEBLLM_MODEL } from "./lib/llm"
+import { estimateRunMinutes } from "./lib/estimate"
 import { generateInsights } from "./lib/insights"
 import { consolidateProcedure, verifyProcedure } from "./lib/refine"
 import { scrubSensitive } from "./lib/skillPrompt"
@@ -36,6 +37,18 @@ const INITIAL_STEPS = [
 export default function App() {
   const [videoFile, setVideoFile] = useState(null)
   const [videoDuration, setVideoDuration] = useState(0) // seconds; drives the upfront time estimate
+
+  // Whole-run expectation shown in the processing card from the FIRST second
+  // after a drop. The backend isn't chosen yet, so span the fast end (Ollama)
+  // to the slow end (in-browser model); the AI settings dialog refines it.
+  const runEtaHint = useMemo(() => {
+    if (!videoDuration) return null
+    const fast = estimateRunMinutes(videoDuration, "ollama", null, true)
+    const slow = estimateRunMinutes(videoDuration, "webllm", DEFAULT_WEBLLM_MODEL, true)
+    if (!fast || !slow) return null
+    const durMin = Math.max(1, Math.round(videoDuration / 60))
+    return `This ${durMin} minute video should take roughly ${fast.lo} to ${slow.hi} minutes end to end, depending on the AI model you pick. Steps appear live once writing starts.`
+  }, [videoDuration])
   const [frames, setFrames] = useState([])
   const [activeFrame, setActiveFrame] = useState(null)
   const [seekTo, setSeekTo] = useState(null)
@@ -453,7 +466,7 @@ export default function App() {
           <>
             {pipelineSteps && (
               <div className="space-y-2">
-                <PipelineStatus steps={pipelineSteps} />
+                <PipelineStatus steps={pipelineSteps} etaHint={runEtaHint} />
                 {pipelineSteps.some(s => s.status === 'active') && (
                   <button
                     onClick={handleCancel}

@@ -1,73 +1,629 @@
-# VideoDoc
+# 🎬 VideoDoc
 
-Turn any screen recording into clean, step by step documentation. Everything runs on your own machine: transcription, screen reading and the AI writing all happen locally, so the video never leaves your device.
+**Automated Video Documentation · AI Transcription · Local LLM Annotation · Beautiful Exports**
 
-No uploads. No account. No API keys. That is the whole point of this tool: you can throw an internal company recording at it without asking anyone for permission, because there is nothing to ask permission for.
+`React` `Whisper AI` `Vision` `llama.cpp` `Ollama` `WebLLM` `RAG` `Three.js` `Vite` `License: MIT` `Version 4`
 
-## What you get
+> Turn any screen recording into polished, step-by-step documentation, entirely on your own machine. No server. No uploads. No subscription. Ever.
 
-Drop in a recording (a Teams meeting, a training session, a quick screen capture) and VideoDoc produces:
+> **Now on Version 4.** This release is about trust: every step is grounded in what was actually said and shown, steps line up with real screen changes, summaries no longer invent conclusions, and there are now two builds: a hosted web version and a fully offline desktop version with a bundled vision model. See [New in v4](#-new-in-v4).
 
-- A numbered procedure with exact actions, results and notes per step, each with a screenshot from the right moment
-- A purpose statement, prerequisites and an executive summary
-- Key observations and an FAQ built from questions people actually asked in the session
-- A process flow diagram
-- Exports to PDF, Word and HTML, all editable before export
+---
 
-Steps are grounded in three evidence channels at once: what was said (Whisper), what was on screen as text (OCR) and what the screen actually showed (a vision model that looks at the screenshots). A verification pass then rechecks every step against its own evidence before it lands in the document.
+## 📑 Table of Contents
 
-## Two ways to run it
+1. [What Is This?](#-what-is-this)
+2. [Live Demo](#-live-demo)
+3. [New in v4](#-new-in-v4) `🆕`
+4. [New in v3](#-new-in-v3)
+5. [New in v2](#-new-in-v2)
+6. [How It Works: The Full Pipeline](#-how-it-works-the-full-pipeline)
+5. [Module Breakdown](#-module-breakdown)
+   - [Module 1: Frame Extraction](#module-1-frame-extraction)
+   - [Module 2: Audio Extraction](#module-2-audio-extraction)
+   - [Module 3: Whisper AI Transcription](#module-3-whisper-ai-transcription)
+   - [Module 4: AI Annotation (Ollama / WebLLM)](#module-4-ai-annotation-ollama--webllm)
+   - [Module 5: Export Engine](#module-5-export-engine)
+   - [Module 6: Read Screen with OCR](#module-6-read-screen-with-ocr) `🆕 v2`
+   - [Module 7: Animated Step GIFs](#module-7-animated-step-gifs) `🆕 v2`
+   - [Module 8: Chunking and Whole-Video Coverage](#module-8-chunking-and-whole-video-coverage) `🆕 v2`
+   - [Module 9: Vid Chat (in-browser RAG)](#module-9-vid-chat-in-browser-rag) `🆕 v2`
+   - [Module 10: Doc Chat app](#module-10-doc-chat-app) `🆕 v2`
+6. [Repository Structure](#-repository-structure)
+7. [Tech Stack](#-tech-stack)
+8. [Getting Started](#-getting-started)
+9. [Deploying to Netlify](#-deploying-to-netlify)
+10. [Privacy: Where Does Your Data Go?](#-privacy-where-does-your-data-go)
+11. [Customisation](#-customisation)
+12. [License Notes](#-license-notes)
+13. [Author](#-author)
+14. [License](#-license)
 
-### 1. In the browser (hosted or `npm run dev`)
+---
 
-The web version uses WebLLM (AI in the browser via WebGPU) or a local Ollama install if you have one. Good for trying it out and for machines with a decent GPU.
+## 📖 What Is This?
+
+Imagine you just finished recording a 10-minute tutorial: a code walkthrough, a product demo, an onboarding video, a design process, anything.
+Now someone says: *"Can you write this up as a step-by-step guide?"*
+
+You sigh. You open a doc. You rewatch the video. You pause. You type. You pause again.
+Two hours later you have a half-finished document you never want to look at again.
+
+**VideoDoc eliminates that entirely.**
+
+Upload the video. Click annotate. Get a polished, structured, beautifully formatted document, with screenshots, numbered steps, and AI-written annotations, in minutes.
+
+It works for:
+
+* 👨‍💻 **Developers** recording code walkthroughs → instant onboarding docs
+* 👩‍🏫 **Educators** recording lessons → exportable step-by-step guides
+* 📋 **Operations and PMs** recording workflows → SOPs ready to share
+* 🎨 **Designers and Creators** recording process videos → polished case studies
+
+And the best part? **Everything runs in your browser.** No API keys. No cloud. No privacy trade-offs.
+
+P.S. Version 4 is here, focused on one thing: you should be able to trust every line of the generated document.
+---
+
+## 🌐 Live Demo
+
+👉 **[videodoc.netlify.app](https://videodoc.netlify.app)**
+
+* `/` is the landing page
+* `/#/app` is the VideoDoc app (video to documentation)
+* `/#/docchat` is the Doc Chat app (upload a document and chat with it)
+
+---
+
+## ✨ New in v4
+
+Version 4 is the accuracy and trust release. It was built by testing against a real 32-minute enterprise meeting recording and fixing every failure found by checking the generated document against the actual video, step by step. Everything still runs on your machine.
+
+* **The model must look before it may skip.** Output is schema-constrained JSON on every engine (Ollama, llama.cpp, WebLLM), and the schema forces the model to describe what the screenshot shows before deciding whether a segment contains a step. This single change fixed the biggest source of missed steps in real meeting recordings, where people talk vaguely while doing concrete work on screen.
+* **Steps follow the screen, not the clock.** Step boundaries come from pixel-level scene change detection, so a step starts where a dialog opened, not at an arbitrary time mark. The step budget scales with video length: a 90-minute recording gets proportionally more steps than a 20-minute one, and a low-memory machine gets a ceiling so it still finishes.
+* **Screen-share detection.** Meeting recordings often start with minutes of webcams only. Those minutes can no longer produce fabricated steps.
+* **Recall guard.** A segment the model skipped despite real evidence (spoken action words, a busy screen) gets one explicit second look before it is allowed to vanish. Missing a real step is treated as seriously as inventing one.
+* **Grounded summaries.** The executive summary no longer invents decisions, outcomes or next steps to round off the story, never dramatises, and never names software that was not actually on screen.
+* **Cleaner input, cleaner output.** Meeting chatter, filler and speech-recognition repeats are scrubbed from the transcript before the model sees it. Garbled OCR identifiers are stripped from results. Transient system popups become notes instead of steps. FAQ questions built from mishearings are filtered out.
+* **Editable in full.** Steps can be edited, reordered and removed before export, and every change flows into the PDF, Word and HTML exports. Steps written from thin evidence carry a subtle marker so a reviewer knows where to look.
+* **Two builds.**
+  * `npm run build:netlify` builds the hosted web version, with per-video size and length limits so a huge file cannot crash a visitor's laptop (limits are set in `.env.netlify`).
+  * `npm run build:desktop` builds the fully offline desktop version, which bundles the llama.cpp engine with the gemma 3 4B vision model. One engine, nothing to choose, nothing to install. See [desktop/README.md](desktop/README.md).
+
+---
+
+## ✨ New in v3
+
+Version 3 is the biggest leap yet. The AI now **watches the screen and hears every word**, like a person, so a recording becomes a real Desktop Procedure you can follow without ever opening the video. Everything still runs client-side. No server, no API keys.
+
+* **Vision: the AI sees the screen.** Instead of relying only on OCR text, a vision model looks at the actual screenshots. It names the exact buttons, menus and tabs, ignores the webcam tiles in a call, and works out vague references like "click here" by seeing where the click landed. Two ways, both local: **gemma3** via Ollama, or **Phi-3.5-Vision** in the browser via WebLLM.
+* **Whisper Small for the transcript.** Upgraded from the tiny model to Whisper Small, far more accurate on names, accents and technical jargon (SAP, cost centres, and so on). The transcript is the model's only "ears", so this is the single biggest lever on quality.
+* **A real Desktop Procedure (SOP), not loose notes.** The output is now a structured document: an **Index**, a **Purpose**, **Prerequisites**, a numbered **Procedure** (each step has its actions, the result, an optional note and a screen capture), **Key Observations**, an **Executive Summary** at the top, an **FAQ**, and a **flow diagram**.
+* **Sharp WebM step clips (no more GIFs).** Each step is a short, true-colour WebM clip of the real action, far clearer than a 256-colour GIF and smaller too. Recorded in the browser and base64-inlined into the self-contained HTML.
+* **Smarter, deduplicated steps.** Each segment becomes one clean step (title, ordered actions, result, note). Off-topic or silent stretches are skipped instead of padded with filler, and repeated or overlapping steps are merged, so a one-hour recording reads as roughly 30 to 35 clear steps, not 48 fragments.
+* **Steps say WHERE, not just what.** Every action names where to find the element (the application, ribbon, tab or menu), using the screen plus the model's knowledge of the app.
+* **RAG-grounded FAQ.** Questions are generated from the actual discussion (diverse angles, no near-duplicates), then each answer is retrieved from the relevant transcript passages and enriched with the model's general knowledge, without inventing specifics.
+* **Clean phased flow diagram.** Every step is kept, but grouped into phases (steps flow left to right inside a phase, phases stack top to bottom), so the chart stays readable instead of one long vertical chain.
+* **Hidden transcript for AI.** The full transcript is embedded in the exported HTML but hidden from readers, so the document can be pasted into any AI assistant for deeper Q&A.
+* **Stronger model picker.** WebLLM now offers Fast (1B), Balanced (Qwen2.5-3B, default), Max (Qwen2.5-7B) and a Vision model, each with accuracy and speed shown up front. The app falls back to a lighter model if a GPU cannot load the chosen one.
+* **Faster, safer pipeline.** Frame extraction no longer stalls on long videos, transcription runs in 5-minute windows with real progress and a Cancel button, and an overall progress bar shows the whole run at a glance. Known domain mishearings (like "cost centre") are auto-corrected.
+
+### Coming next
+
+* **Smart screenshots** that auto-zoom and crop to the exact spot that was clicked.
+* **Sharper vision** that reads small interface text more reliably.
+* **Meeting Minutes mode:** who said what, and who led the session.
+* **More languages** for non-English recordings.
+* **Custom branding:** your own logo, colours and templates.
+* **Accent-tuned transcription** seeded with the on-screen vocabulary.
+
+(The consolidation pass, editable and reorderable output, and the self-verify pass from this list shipped in v4.)
+
+---
+
+## ✨ New in v2
+
+Everything below runs client-side. No server, no API keys.
+
+* **Reads your screen (OCR).** Tesseract reads the on-screen text off the frames, so steps name the exact buttons, menus and files, and the tools you used (Excel, VBA, SAP, VS Code, Python and more) are detected automatically and listed in the guide.
+* **Animated step GIFs.** Each step becomes a smooth GIF of the real action: a clip from 3 seconds before to 3 seconds after the keyframe, encoded in the browser with `gifenc` and embedded into the HTML guide. Optimised with downscaling, low frame rate and a shared palette.
+* **Vid Chat (RAG).** Ask your recording questions, either after a full guide is built or right after transcription. Embeddings run in the browser (MiniLM via `transformers.js`), the closest moments are retrieved, and the local LLM answers, showing the matching frame and a jump-to-moment link. Summary or "what is this all about?" questions are detected and answered from passages sampled across the whole document, not just the four nearest. Live progress steps (searching, loading model, writing) replace any frozen spinner.
+* **Handles long videos (chunking) and covers the whole video.** The recording is split into time windows across its full length, not just where someone spoke, so silent stretches are still documented from the on-screen (OCR) text. Long recordings finish in a handful of focused passes instead of hundreds of tiny calls. Frame extraction auto-caps and downscales to stay within browser memory.
+* **You name the guide.** The document title is asked up front, so the heading is never the raw video file name.
+* **Browser-first, and you pick the model.** WebLLM runs in your browser with zero install. A model picker shows the accuracy and per-segment time of each option (Fast 1B, Balanced 1.5B, Quality 3B); the app never auto-switches. The default is the 1B model so Intel / integrated graphics stay responsive. Ollama stays available as an opt-in upgrade for stronger local models.
+* **Two apps, one project.** **VideoDoc** turns a recording into a guide and lets you Vid Chat with it. **Doc Chat** lets you upload a document directly, chunk it, and chat with it, no video required. Both are reachable from the landing page.
+* **Resilient by design.** The animated background is wrapped so a missing WebGL context (low-end devices, hardware acceleration off) can never blank the page. Verified by an automated headless render test of every route.
+
+---
+
+## 🔄 How It Works: The Full Pipeline
+
+**App 1: VideoDoc (video → guide)**
 
 ```
+┌─────────────┐   ┌──────────────────────┐   ┌─────────────────────┐   ┌──────────────────────┐
+│  Upload     │──▶│  Extract             │──▶│  Whisper AI          │──▶│  Read Screen (OCR)   │
+│  Video      │   │  Frames + Audio      │   │  Transcription       │   │  on-screen text +    │
+│  (.mp4/.mov │   │  (auto-capped,       │   │  (Web Worker,        │   │  tools detected      │
+│  /.webm)    │   │  downscaled)         │   │  ~95% accuracy)      │   │  (Excel, VBA, SAP…)  │
+└─────────────┘   └──────────────────────┘   └──────────────────────┘   └──────────┬───────────┘
+                                                                                    │
+        ┌───────────────────────────────────────────────────────────────────────────┘
+        │
+┌───────▼──────────────────────────────────────────────────────────┐
+│   Chunk transcript into time windows (covers the WHOLE video)     │
+│   then AI Annotation (auto-detected)                              │
+│   ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│   │  Ollama found?       │    │  WebLLM fallback             │   │
+│   │  localhost:11434     │    │  Llama-3.2-3B via WebGPU     │   │
+│   │  ✅ stronger models  │    │  ✅ no install (browser)     │   │
+│   └──────────────────────┘    └──────────────────────────────┘   │
+└───────────────────────────────┬──────────────────────────────────┘
+                                 │
+       ┌─────────────────────────┴───────────────────────────┐
+       │                                                      │
+┌──────▼──────────────────────────────┐        ┌──────────────▼───────────────┐
+│         Export Engine               │        │   Vid Chat (in-browser RAG)  │
+│  🌐 HTML (animated step GIFs)       │        │   ask the guide, get answers │
+│  📄 PDF        📝 DOCX              │        │   + matching frame + jump    │
+└─────────────────────────────────────┘        └──────────────────────────────┘
+```
+
+**App 2: Doc Chat (document → chat)**
+
+```
+┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────────────┐
+│  Upload a document   │──▶│  Extract text +      │──▶│  Doc Chat (in-browser RAG)   │
+│  .txt .md .html .docx│   │  chunk (big docs OK) │   │  MiniLM embeddings + answers │
+└──────────────────────┘   └──────────────────────┘   └──────────────────────────────┘
+```
+
+---
+
+## 🧩 Module Breakdown
+
+### Module 1: Frame Extraction
+
+VideoDoc uses the **HTML5 Canvas API** and a hidden `<video>` element to pull frames directly in the browser. No server. No ffmpeg. No temp files.
+
+```js
+// Seek to timestamp → draw to canvas → export as JPEG
+video.currentTime = timestamp
+canvas.drawImage(video, 0, 0)
+const frame = canvas.toDataURL('image/jpeg', 0.85)
+```
+
+| Parameter | Value |
+|---|---|
+| Interval | Every 5 seconds |
+| Format | JPEG (base64) |
+| Storage | Browser memory (RAM) |
+| Disk writes | Zero |
+
+These frames are later embedded into the exported HTML guide as animated slideshows, one per transcript segment.
+
+---
+
+### Module 2: Audio Extraction
+
+The audio track is ripped using the **Web Audio API** and **OfflineAudioContext**, then resampled to exactly what Whisper expects.
+
+```js
+// Decode → resample to 16kHz mono Float32Array
+const audioContext = new OfflineAudioContext(1, length, 16000)
+const source = audioContext.createBufferSource()
+source.buffer = decoded
+source.connect(audioContext.destination)
+const resampled = await audioContext.startRendering()
+```
+
+| Parameter | Value |
+|---|---|
+| Output format | Float32Array |
+| Sample rate | 16,000 Hz (Whisper standard) |
+| Channels | 1 (mono) |
+| Storage | Browser memory only |
+
+---
+
+### Module 3: Whisper AI Transcription
+
+This is where the magic starts. VideoDoc runs **OpenAI's Whisper model** entirely inside your browser using ONNX Runtime Web, powered by `@huggingface/transformers`.
+
+The model runs in a **dedicated Web Worker** so your UI never freezes, even on long videos.
+
+```
+Model:    Xenova/whisper-tiny.en
+Format:   fp32 (q4/q8 cause MatMulNBits errors in browser ONNX)
+Size:     ~150MB (downloaded once, cached in IndexedDB forever)
+Output:   Timestamped segments [ { text, start, end }, ... ]
+Accuracy: ~95% on clear English audio
+```
+
+**First run:** The model downloads (~150MB). Grab a coffee.
+**Every run after:** Instant, served from IndexedDB cache.
+
+```
+[ Transcription Progress ]
+Downloading model  ████████░░  80%   (~120MB / 150MB)
+Transcribing       ██████████  100%  → 24 segments found
+```
+
+---
+
+### Module 4: AI Annotation (Ollama / WebLLM)
+
+Once transcription is done, VideoDoc sends each segment to a **local LLM** for annotation. The LLM writes structured step-by-step documentation for each segment.
+
+VideoDoc **auto-detects** which AI to use:
+
+#### 🟢 Path A: Ollama (Recommended)
+
+If Ollama is running on `localhost:11434`, VideoDoc automatically fetches your installed models and lets you pick one.
+
+```
+Ping → localhost:11434/api/tags
+         ↓ (models found)
+Dropdown → llama3.2 / mistral / gemma3 / deepseek-r1 / ...
+```
+
+| Metric | Value |
+|---|---|
+| Output quality | ★★★★★ (full-size model) |
+| Privacy | 100% local |
+| Speed | Depends on your GPU/CPU |
+| Best models | Llama 3.2, Mistral 7B |
+| Avoid | Gemma 2 (outputs `<think>` blocks, auto-stripped but messy) |
+
+Each segment gets this prompt structure:
+
+```
+Previous context: [prev segment text]
+Current segment:  [current text, timestamp]
+Next context:     [next segment text]
+
+Write STEPS: 1. ... 2. ... and RESULT: ...
+```
+
+Context-aware: the LLM knows what came before and after each segment, so annotations flow naturally as a document.
+
+#### 🟣 Path B: WebLLM, you pick the model `🆕 v2`
+
+No Ollama? No problem. VideoDoc runs the model directly in your browser via WebGPU using `@mlc-ai/web-llm`. **🆕 New in v2:** instead of silently choosing for you, the app now shows a model picker with the accuracy and per-segment time of each option, so you choose the speed/quality trade-off yourself. It never auto-switches.
+
+| Model | Size | Accuracy | Speed | Per-segment ETA |
+|---|---|---|---|---|
+| **Fast · Llama 3.2 1B** (default) | ~0.9 GB | Good | Fastest | 10 to 30s |
+| **Balanced · Qwen 2.5 1.5B** | ~1.3 GB | Better | Medium | 20 to 50s |
+| **Quality · Llama 3.2 3B** | ~2.2 GB | Best | Slow | 40s to 2m |
+
+The default is the 1B model so laptops with Intel / integrated graphics stay responsive; a dedicated GPU can comfortably run the 3B. The chosen model downloads once, then is cached in your browser. While it loads, the pipeline shows distinct live steps (download → load into GPU → compile shaders → ready) instead of one frozen line. Requires Chrome 113+ / Edge 113+.
+
+---
+
+### Module 5: Export Engine
+
+Three export formats, all generated client-side with zero server involvement.
+
+#### 🌐 HTML Export
+
+The crown jewel. A self-contained HTML file with:
+
+* Warm DM Sans typography
+* Animated frame slideshow per step (extracted frames, base64 embedded)
+* Numbered steps with teal badges
+* Gold result rows
+* Scroll progress bar
+* Scroll-reveal animations
+* Fixed navbar
+* Fully printable
+
+```js
+// Dynamic import, only loaded when user clicks Export
+const { exportHTML } = await import('./lib/exportHTML.js')
+exportHTML(annotatedDocs, frames, videoName)
+```
+
+#### 📄 PDF Export
+
+Clean, readable, print-friendly layout via `jspdf`.
+
+#### 📝 DOCX Export
+
+Word-compatible document via the `docx` package. Paste directly into Notion, Confluence, or Google Docs.
+
+---
+
+### Module 6: Read Screen with OCR
+
+**🆕 New in v2.** After frames are captured, `tesseract.js` reads the actual on-screen text directly off the frames (sampled and bounded so it stays fast). That text is fed to the LLM so steps name the exact buttons, menus and files, and a signature scan detects the tools used (Excel, VBA, SAP, VS Code, Python and more) which are then listed in the guide.
+
+| Parameter | Value |
+|---|---|
+| Engine | tesseract.js (in browser) |
+| Frames read | sampled, capped for speed |
+| Output | on-screen text per frame + detected tools |
+
+---
+
+### Module 7: Animated Step GIFs
+
+**🆕 New in v2.** Each documented step becomes a short GIF of the real action: a clip from 3 seconds before to 3 seconds after the keyframe, captured by seeking a hidden `<video>` and encoded with `gifenc`. Optimised with downscaling, a low frame rate and a single shared colour palette, then embedded into the HTML guide in place of a static screenshot.
+
+---
+
+### Module 8: Chunking and Whole-Video Coverage
+
+**🆕 New in v2.** The transcript is split into time windows across the full length of the video, not just where someone spoke. Silent stretches are still documented from the OCR text. This keeps long recordings coherent (a handful of focused passes instead of hundreds of tiny calls) and bounds the number of LLM requests.
+
+---
+
+### Module 9: Vid Chat (in-browser RAG)
+
+**🆕 New in v2.** Ask the finished guide questions. Each segment is embedded with MiniLM (`@huggingface/transformers`, runs in the browser), the closest segments to the question are retrieved by cosine similarity, and the local LLM answers grounded in those segments, showing the matching frame and a jump-to-moment link. No server, no API keys.
+
+Refinements in this revision:
+
+* **Summary aware.** "What is this all about?", "give me a summary" and similar questions are detected and answered from passages sampled evenly across the whole document, so an overview actually covers everything instead of four random excerpts.
+* **Live progress, not a frozen spinner.** The panel shows the real phase with a progress bar (searching → downloading / loading model with a percent → writing the answer).
+* **Readable dark panel.** The chat uses a solid dark surface instead of a translucent one.
+* **Sources you can open.** For document parts with no timestamp, clicking a source expands the exact passage it used; for video, it still jumps to the moment.
+* **Honest when the document doesn't have the answer.** If retrieval is weak (the question isn't covered), it doesn't bluff. It says so and offers two choices: answer from the AI model's own general knowledge (clearly labelled as not from your document), or open a real web search (Perplexity, with sources) in a new tab. Nothing is scraped silently and the privacy promise stays intact.
+
+---
+
+### Module 10: Doc Chat app
+
+**🆕 New in v2.** A second app (at `/#/docchat`). Upload a document (`.txt`, `.md`, `.html`, `.docx`); the text is extracted and chunked into overlapping passages so even large documents index cleanly, then the same in-browser RAG lets you chat with it. No video required.
+
+How it behaves now:
+
+* **Process starts on upload.** As soon as the file lands, it is chunked and the knowledge index is built in the background. You do not have to ask first, so the first answer comes back fast.
+* **Pick your model side by side.** While indexing runs, the same model picker (WebLLM Fast / Balanced / Quality with accuracy and ETA, plus Ollama if detected) is right there to choose from. It never auto-switches.
+* **Clean HTML extraction.** For `.html` files, `<script>` and `<style>` are stripped before reading, so the chat indexes the real document text and not stylesheet or script code. The header shows the section count and an approximate token count.
+
+---
+
+## 🗂️ Repository Structure
+
+```
+video-docs/
+│
+├── index.html                    ← Entry point + Three.js/Vanta script tags
+├── netlify.toml                  ← COEP/COOP headers + SPA redirect
+├── package.json
+├── vite.config.js                ← Excludes ONNX/HuggingFace from optimizeDeps
+│
+├── public/
+│   ├── _redirects                ← Netlify SPA fallback
+│   ├── _headers                  ← COEP/COOP for drag-drop deploys   🆕 v2
+│   ├── three.min.js              ← Three.js r134 (same-origin, bypasses COEP)
+│   ├── vanta.halo.min.js         ← Vanta HALO effect (app background)
+│   └── vanta.net.min.js          ← Vanta NET effect (landing background)
+│
+└── src/
+    ├── main.jsx                  ← HashRouter → / · /app · /docchat       🆕 v2 route
+    ├── App.jsx                   ← VideoDoc pipeline UI + OCR + Vid Chat
+    ├── DocChatApp.jsx            ← Doc Chat app (upload a doc, chat)      🆕 v2
+    ├── index.css                 ← Indeterminate progress animation
+    │
+    ├── components/
+    │   ├── LandingPage.jsx       ← Full landing page (two app buttons)
+    │   ├── Uploader.jsx          ← Drop cards: video / code / reference doc
+    │   ├── VideoPlayer.jsx       ← Seekable video preview
+    │   ├── FrameStrip.jsx        ← Horizontal frame timeline
+    │   ├── DocPreview.jsx        ← Live transcript + annotation viewer
+    │   ├── ExportBar.jsx         ← HTML / PDF / DOCX export (+ GIFs)
+    │   ├── AISettings.jsx        ← Title + Ollama model picker + sections
+    │   ├── DocChat.jsx           ← Vid Chat / Doc Chat panel             🆕 v2
+    │   ├── DocChatDemo.jsx       ← Looping Vid Chat landing animation     🆕 v2
+    │   ├── ProductDemo.jsx       ← Animated landing-page product demo
+    │   ├── BeforeAfter.jsx       ← Before/after comparison slider
+    │   ├── VideoDocLogo.jsx      ← Custom SVG logo
+    │   └── PipelineStatus.jsx    ← Live step tracker (elapsed, %, ETA)
+    │
+    ├── hooks/
+    │   ├── useFrameExtractor.js  ← Frame extraction (capped + downscaled) 🆕 v2 hardening
+    │   ├── useAudioExtractor.js  ← Web Audio API → 16kHz (guarded)        🆕 v2 hardening
+    │   ├── useTranscriber.js     ← Whisper Web Worker wrapper
+    │   ├── useAnnotator.js       ← Windowed annotation + OCR context      🆕 v2
+    │   ├── useOCR.js             ← Tesseract OCR + tool detection         🆕 v2
+    │   ├── useGifMaker.js        ← Browser GIF encoding per step          🆕 v2
+    │   ├── useRAG.js             ← In-browser embeddings + retrieval      🆕 v2
+    │   ├── useDocParser.js       ← headings + full-text extract + chunk   🆕 v2 (chunk)
+    │   └── useVantaHalo.js       ← Vanta HALO background (WebGL-guarded)   🆕 v2 hardening
+    │
+    ├── workers/
+    │   └── transcriber.worker.js ← Whisper in isolated Web Worker thread
+    │
+    └── lib/
+        ├── llm.js                ← Shared Ollama + WebLLM calls           🆕 v2
+        ├── skillPrompt.js        ← OCR-aware prompts + window chunking    🆕 v2
+        ├── exportHTML.js         ← HTML guide (title, tools, step GIFs)
+        ├── exportPDF.js          ← jsPDF export (title + tools)
+        └── exportDOCX.js         ← docx export (title + tools)
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Tool / Library | Role |
+|---|---|
+| **React 18 + Vite 6** | Frontend framework + build tool |
+| **Tailwind CSS v4** | Utility-first styling |
+| **@huggingface/transformers v4** | Whisper transcription + MiniLM embeddings (RAG), in browser via ONNX |
+| **@mlc-ai/web-llm** | WebLLM via WebGPU, user-selectable: Llama 3.2 1B (default) / Qwen 2.5 1.5B / Llama 3.2 3B |
+| **Ollama** | Local LLM server (optional, user-installed) |
+| **tesseract.js** | In-browser OCR (on-screen text + tool detection) |
+| **gifenc** | In-browser GIF encoding for animated step clips |
+| **Three.js r134** | 3D rendering engine for Vanta |
+| **Vanta.js** | Animated backgrounds (NET + HALO) |
+| **jsPDF** | Client-side PDF generation |
+| **docx** | Client-side DOCX generation |
+| **mammoth** | .docx to HTML parser (reference docs) |
+| **lucide-react** | Icon library |
+| **react-router-dom v7** | HashRouter for SPA routing |
+| **Netlify** | Hosting (drag dist/ to deploy) |
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Aryan-Bajaj/video-docs.git
+cd video-docs
+```
+
+### 2. Install Dependencies
+
+```bash
 npm install
+```
+
+### 3. Start Dev Server
+
+```bash
 npm run dev
+# Opens at http://localhost:5174
 ```
 
-Then open http://localhost:5175 and drop a video in.
+> **Note:** The dev server must run with COEP/COOP headers (already configured in `vite.config.js`) for Whisper's SharedArrayBuffer to work.
 
-The hosted build has a size and length limit per video (configurable in `.env.netlify`), because processing happens on the visitor's machine and huge files can overwhelm a weak laptop.
+### 4. (Optional) Set Up Ollama for Best Results
 
-### 2. Desktop, fully offline (recommended for office machines)
+Install Ollama from [ollama.com](https://ollama.com), then pull a model:
 
-The desktop version bundles the llama.cpp engine with the gemma 3 4B vision model. One engine, no choices to make, no Ollama, no admin rights. See [desktop/README.md](desktop/README.md) for the three step setup. Build it with:
-
+```bash
+ollama pull llama3.2      # Recommended
+ollama pull mistral       # Also great
+ollama pull gemma3        # Works fine
 ```
-npm run build:desktop
+
+VideoDoc auto-detects Ollama at `localhost:11434`. No configuration needed.
+
+If Ollama is not running, VideoDoc falls back to WebLLM (Llama 3.2 1B in-browser via WebGPU). Requires Chrome 113+ or Edge 113+.
+
+### 5. Upload a Video and Generate Docs
+
+1. Open `http://localhost:5174`
+2. Click **Try It Free** on the landing page
+3. Drop a `.mp4`, `.mov`, or `.webm` file
+4. Wait for Whisper to transcribe (first run downloads ~150MB model)
+5. Select AI mode and model in the annotation modal
+6. Click **Annotate**
+7. Export as HTML, PDF, or DOCX
+
+---
+
+## ☁️ Deploying to Netlify
+
+### Option A: Drag and Drop (No Git required)
+
+```bash
+npm run build:netlify
+# Drag the dist/ folder to https://app.netlify.com/drop
 ```
 
-## How it works
+### Option B: Connect GitHub Repo (recommended)
 
-1. Frames are sampled adaptively across the video and fingerprinted, so step boundaries follow actual screen changes rather than the clock
-2. Audio is decoded at 16 kHz, denoised and transcribed with Whisper (small), with meeting chatter filtered out of the transcript
-3. Tesseract reads on screen text with a confidence filter, so garbled UI text never reaches the document
-4. The recording start is detected: webcam only intro minutes can not produce fabricated steps
-5. Each segment goes to the model with the transcript, the screen text and the screenshot together, and the model must describe what it sees before it may decide the segment has no step in it
-6. Verification, deduplication and consolidation passes clean the result
-7. A document level pass writes the purpose, summary and FAQ, grounded in the same evidence
+1. Push this repo to GitHub
+2. Connect it to Netlify
+3. Done. `netlify.toml` already sets the build command (`npm run build:netlify`), the publish directory, the COEP/COOP headers and long-lived caching for the heavy WASM assets.
 
-## Deploying to Netlify
+The hosted build enforces a per-video size and length limit (default 1000 MB / 30 minutes, set in `.env.netlify`). Processing runs on the visitor's machine, so the limit is there to protect a weak laptop from a huge file, not the server. The desktop build has no limits.
 
-The repo is ready as is: `netlify.toml` sets the build command, SPA redirects, the cross origin isolation headers needed for multithreaded WASM, and long lived caching for the heavy runtime assets. Connect the repo in Netlify and deploy. Nothing else to configure.
+> **Why COEP/COOP headers?** Whisper uses `SharedArrayBuffer` (for WASM threading) which browsers only allow on pages with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. Both are set in `netlify.toml`.
 
-## Privacy
+---
+
+## 🔒 Privacy: Where Does Your Data Go?
 
 | Data | Where it goes |
 |---|---|
-| Your video | stays on your machine |
-| Audio and transcript | processed in the browser |
-| Screenshots | processed locally by the model |
-| Exports | written straight to your disk |
+| Your video file | Browser RAM only. Never leaves your device. |
+| Extracted audio | Browser RAM only. Fed directly to Whisper. |
+| Extracted frames | Browser RAM. Embedded in export file. |
+| Transcript text | Sent to Ollama (localhost) or WebLLM (browser). Never to any server. |
+| Exported document | Generated in your browser. Saved to your Downloads folder. |
+| **External requests** | **Zero.** Nothing is sent to any external server at runtime. |
 
-The only network traffic is the one time download of the AI models themselves.
+The only network request VideoDoc ever makes is to `localhost:11434` (your own Ollama instance) and to download the Whisper model from HuggingFace on first run (cached after that).
 
-## Tech stack
+---
 
-React, Vite, Tailwind. Whisper via transformers.js, OCR via Tesseract.js, in browser AI via WebLLM, desktop AI via llama.cpp with gemma 3, exports via jsPDF and docx, diagrams via Mermaid.
+## ⚙️ Customisation
 
-## License
+**Change frame extraction interval**
+In `src/App.jsx`, find `extractFrames(file, 5)`. The `5` is seconds between frames.
 
-MIT
+**Change Whisper model**
+In `src/workers/transcriber.worker.js`, replace `Xenova/whisper-small.en` with any compatible model (e.g. `Xenova/whisper-base.en` for a smaller download at lower accuracy).
+
+**Add custom sections to annotation prompt**
+In the AI Settings modal, add custom section names. These get injected into the LLM prompt as structured output requirements.
+
+**Change export styling**
+Edit `src/lib/exportHTML.js`. All styles are inline in the generated HTML string.
+
+**Change Vanta HALO settings (app background)**
+Edit `src/hooks/useVantaHalo.js`. Adjust `baseColor`, `size`, `speed`, `amplitudeFactor`.
+
+**Change Vanta NET settings (landing page background)**
+In `src/components/LandingPage.jsx`, find the `window.VANTA.NET({...})` call and adjust `color`, `points`, `maxDistance`, `spacing`.
+
+---
+
+## ✨ Features at a glance
+
+* Turn a screen recording into a clean step-by-step guide
+* In-browser Whisper transcription, no upload
+* OCR reads the actual on-screen text and lists the tools used `🆕 v2`
+* Animated step GIFs of the real action `🆕 v2`
+* Whole-video coverage via chunking, silent parts included `🆕 v2`
+* Pick your AI model with accuracy and time shown up front (1B / 1.5B / 3B), no auto-switching `🆕 v2`
+* Live loading steps for the browser model (download, GPU, compile, ready) `🆕 v2`
+* Optional Ollama for stronger local models
+* Vid Chat: ask your recording or document anything, with cited sources `🆕 v2`
+* Summary-aware answers that cover the whole document `🆕 v2`
+* Honest web fallback: if the doc lacks the answer, get the AI model's general knowledge or a real web search `🆕 v2`
+* Doc Chat app: upload any document and chat with it, processing starts on upload `🆕 v2`
+* Export to HTML, PDF or DOCX
+* 100% in the browser, private, no API keys, no servers
+
+---
+
+## 📄 License Notes
+
+All npm dependencies are MIT, Apache 2.0, or BSD licensed, fully compatible with commercial use.
+
+| Concern | Status |
+|---|---|
+| All npm packages | ✅ MIT / Apache 2.0 / BSD |
+| Whisper model (Xenova) | ✅ MIT |
+| WebLLM / Llama 3.2 | ⚠️ Meta Community License. Commercial use allowed under 700M MAU. Must accept [Meta's terms](https://llama.meta.com). |
+| Ollama models | User's responsibility. Llama 3.2, Mistral, and Gemma all allow commercial use. |
+
+This project itself is **MIT licensed**. Fork it, build on it, ship it.
+
+---
+
+## ⚠️ Disclaimer
+
+VideoDoc is a browser-based productivity tool. Transcription accuracy depends on audio quality and the Whisper model variant used. AI annotation quality depends on the LLM model chosen. Always review generated documentation before publishing. The tool does not guarantee 100% accuracy on all video types.
+
+---
+
+## 👤 Author
+
+**Aryan Bajaj** · [GitHub](https://github.com/Aryan-Bajaj)
+
+---
+
+## 📄 License
+
+MIT License. See [LICENSE](LICENSE) for details.
+
+---

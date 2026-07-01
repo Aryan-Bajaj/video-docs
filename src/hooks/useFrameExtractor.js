@@ -14,7 +14,7 @@ export default function useFrameExtractor() {
   // than MAX_FRAMES (so OCR time + memory stay bounded on long recordings).
   const TARGET_SPACING = 10 // seconds between frames we aim for
   const MIN_FRAMES = 12     // floor — even a 30s clip gets real coverage
-  const MAX_FRAMES = 180    // ceiling — keeps OCR/decoding tractable on long videos
+  const MAX_FRAMES = 300    // ceiling — a 90-min recording still gets a frame every ~18s; memory stays bounded (~45 MB of JPEGs)
   const MAX_W = 1280
   const SEEK_TIMEOUT = 4000 // ms — skip a stalled seek instead of hanging
 

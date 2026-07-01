@@ -6,6 +6,15 @@ function dataUrlToUint8(dataUrl) {
   return bytes
 }
 
+// Width/height straight from the GIF header (bytes 6-9, little endian), so the
+// embedded animation keeps its true aspect ratio.
+function gifSize(bytes) {
+  if (bytes.length < 10) return null
+  const w = bytes[6] | (bytes[7] << 8)
+  const h = bytes[8] | (bytes[9] << 8)
+  return w > 0 && h > 0 ? { w, h } : null
+}
+
 export async function exportDOCX(docs, videoName, meta = {}) {
   const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, ImageRun } = await import("docx")
   const title = (meta.title && meta.title.trim()) || "Step-by-Step Guide"
@@ -82,7 +91,24 @@ export async function exportDOCX(docs, videoName, meta = {}) {
       ],
     }))
 
-    if (doc.frame) {
+    // Prefer the animated step GIF (shows the action happening; modern Word
+    // plays it, older Word shows its first frame); fall back to the still frame.
+    const gif = meta.gifs instanceof Map ? meta.gifs.get(doc.timestamp) : null
+    let mediaDone = false
+    if (gif) {
+      try {
+        const bytes = dataUrlToUint8(gif)
+        const dim = gifSize(bytes)
+        const width = 400
+        const height = dim ? Math.round(width * (dim.h / dim.w)) : 225
+        children.push(new Paragraph({
+          children: [new ImageRun({ data: bytes, transformation: { width, height } })],
+          spacing: { after: 100 },
+        }))
+        mediaDone = true
+      } catch { /* fall through to the still frame */ }
+    }
+    if (!mediaDone && doc.frame) {
       try {
         children.push(new Paragraph({
           children: [new ImageRun({ data: dataUrlToUint8(doc.frame), transformation: { width: 280, height: 158 } })],

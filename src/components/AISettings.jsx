@@ -9,7 +9,29 @@ import { probeSystem } from "../lib/systemCheck"
 // anything. WebLLM/Ollama choices exist only in the web build.
 const DESKTOP = import.meta.env.VITE_BUILD_TARGET === "desktop"
 
-export default function AISettings({ onConfirm, onClose, suggestedSections, toolsUsed = [] }) {
+// Honest upfront estimate of the whole run for THIS video on THIS backend, so
+// nobody thinks the app hung. Deliberately a wide range: hardware varies a lot.
+function estimateRunMinutes(durationSecs, mode, webModelId, selfVerify) {
+  if (!durationSecs) return null
+  const mem = navigator.deviceMemory || 8
+  const windows = Math.min(Math.max(12, Math.ceil(durationSecs / 45)), mem <= 4 ? 48 : 96)
+  // Rough per-window seconds by backend (vision costs more than text).
+  const perWindow =
+    mode === "ollama" ? 25 :
+    mode === "local" ? 30 :
+    isWebLLMVision(webModelId) ? 100 :
+    /1B/.test(webModelId || "") ? 20 : 45
+  let total = windows * perWindow
+  if (selfVerify) total *= 1.8                      // verify re-checks every step
+  total += durationSecs * 0.5                       // Whisper small (multithreaded WASM)
+  total += Math.min(140, Math.max(48, durationSecs / 40)) * 2 // OCR keyframes
+  total += 120                                      // insights + consolidation
+  const lo = Math.max(1, Math.round((total * 0.7) / 60))
+  const hi = Math.max(lo + 1, Math.round((total * 1.5) / 60))
+  return { lo, hi }
+}
+
+export default function AISettings({ onConfirm, onClose, suggestedSections, toolsUsed = [], videoDuration = 0 }) {
   const [mode, setMode] = useState(DESKTOP ? "local" : "webllm") // browser-first on web: works for everyone, no install
   const [ollamaStatus, setOllamaStatus] = useState("checking")
   const [ollamaModels, setOllamaModels] = useState([])
@@ -378,6 +400,20 @@ export default function AISettings({ onConfirm, onClose, suggestedSections, tool
             </span>
           </button>
         </div>
+
+        {(() => {
+          const est = estimateRunMinutes(videoDuration, mode, webModel, selfVerify)
+          if (!est) return null
+          const durMin = Math.round(videoDuration / 60)
+          return (
+            <div className="flex items-start gap-2 text-xs text-zinc-400 bg-zinc-800/60 border border-zinc-700/60 rounded-lg px-3 py-2.5">
+              <Gauge className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" />
+              <span>
+                <span className="text-zinc-200 font-medium">Expect roughly {est.lo} to {est.hi} minutes</span> for this {durMin} minute video with the current settings, plus a one-time model download on first run. Steps appear live as they are written, so you can watch the document grow.
+              </span>
+            </div>
+          )
+        })()}
 
         <button
           onClick={() => onConfirm(mode, null, mode === "ollama" ? selectedModel : mode === "local" ? "gemma3" : webModel, title.trim(), company.trim(), { selfVerify, consolidate })}

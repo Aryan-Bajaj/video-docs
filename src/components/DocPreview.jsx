@@ -148,6 +148,7 @@ export default function DocPreview({ transcriptChunks, annotatedDocs, onSeek, on
   const [verified, setVerified] = useState(() => new Set())
   const [showVerify, setShowVerify] = useState(false)
   const [drafts, setDrafts] = useState({})            // acronym -> replacement text
+  const [lightbox, setLightbox] = useState(null)      // enlarged screenshot {src, label}
 
   const acronyms = useMemo(() => collectAcronyms(annotatedDocs), [annotatedDocs])
   const evalResult = useMemo(() => evaluateDoc(annotatedDocs), [annotatedDocs])
@@ -220,20 +221,30 @@ export default function DocPreview({ transcriptChunks, annotatedDocs, onSeek, on
         <div className="overflow-y-auto divide-y divide-zinc-800/60">
           {annotatedDocs.map((doc, i) => (
             <div key={i} className="p-4 flex gap-3 group">
-              {/* Thumbnail (click → seek) */}
-              <button onClick={() => onSeek?.(doc.timestamp, i)} className="shrink-0 w-20 text-left">
+              {/* Thumbnail: image click enlarges (80px tells you nothing about a
+                  dense enterprise UI); the timestamp underneath seeks the video */}
+              <div className="shrink-0 w-20">
                 {doc.frame ? (
-                  <img src={doc.frame} alt="" className="w-20 h-12 object-cover rounded-lg opacity-75 group-hover:opacity-100 transition-opacity" />
+                  <button onClick={() => setLightbox({ src: doc.frame, label: `Step ${i + 1} · ${doc.label}` })} title="Click to enlarge" className="block w-full cursor-zoom-in">
+                    <img src={doc.frame} alt="" className="w-20 h-12 object-cover rounded-lg opacity-75 group-hover:opacity-100 transition-opacity" />
+                  </button>
                 ) : (
                   <div className="w-20 h-12 rounded-lg bg-zinc-800 flex items-center justify-center"><span className="text-zinc-600 text-xs font-mono">{doc.label}</span></div>
                 )}
-                <span className="block text-center text-emerald-400 font-mono text-xs mt-1">{doc.label}</span>
-              </button>
+                <button onClick={() => onSeek?.(doc.timestamp, i)} title="Jump to this moment in the video"
+                  className="block w-full text-center text-emerald-400 hover:text-emerald-300 font-mono text-xs mt-1 transition-colors">{doc.label}</button>
+              </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Step {i + 1}</span>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                    Step {i + 1}
+                    {doc.lowConfidence && (
+                      <span title="Written from thin evidence (little narration and little readable screen text at this moment). Worth a quick review."
+                        className="inline-block w-2 h-2 rounded-full bg-amber-400/80 ring-2 ring-amber-400/25 cursor-help" />
+                    )}
+                  </span>
                   {editing !== i && doc.step && (
                     <div className="flex items-center gap-1">
                       {/* Reorder + remove: the human editing the doc has the final say */}
@@ -258,6 +269,18 @@ export default function DocPreview({ transcriptChunks, annotatedDocs, onSeek, on
             </div>
           ))}
         </div>
+
+        {/* Screenshot lightbox — dense enterprise UIs are unreadable at 80px */}
+        {lightbox && (
+          <div className="fixed inset-0 z-[60] bg-black/85 flex flex-col items-center justify-center p-6 cursor-zoom-out"
+            onClick={() => setLightbox(null)}>
+            <img src={lightbox.src} alt="" className="max-w-full max-h-[85vh] rounded-lg shadow-2xl" />
+            <div className="mt-3 flex items-center gap-3">
+              <span className="text-xs text-zinc-300 font-mono">{lightbox.label}</span>
+              <span className="text-xs text-zinc-500">click anywhere to close</span>
+            </div>
+          </div>
+        )}
       </div>
     )
   }

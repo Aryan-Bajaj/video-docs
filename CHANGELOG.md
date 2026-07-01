@@ -2,7 +2,7 @@
 
 All notable changes to VideoDoc, version by version. Newest first.
 
-## v5 (current)
+## v4 (current)
 
 Accuracy release, driven by testing against a real 32 minute enterprise meeting recording and checking every generated step against the actual video.
 

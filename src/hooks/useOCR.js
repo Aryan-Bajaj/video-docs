@@ -101,8 +101,14 @@ function fpDiff(a, b) {
 // pixels actually changed hard (new dialog / tab / app / share start) — far more
 // robust than OCR-text similarity, which degrades to noise on blurry recordings.
 // The annotator uses these as step boundaries so steps align with real events.
-async function selectKeyframes(frames, maxKeyframes = 72) {
+// The OCR budget SCALES with video length (one keyframe per ~40s, capped) so a
+// 90-minute recording is read as densely per minute as a 20-minute one.
+async function selectKeyframes(frames, maxKeyframes = null) {
   if (!frames?.length) return { keyframes: [], sceneCuts: [] }
+  if (maxKeyframes == null) {
+    const dur = frames[frames.length - 1].timestamp || 0
+    maxKeyframes = Math.min(140, Math.max(48, Math.round(dur / 40)))
+  }
 
   // Fingerprint ALWAYS (even when all frames fit the keyframe budget) — the
   // scene cuts matter to segmentation regardless of how many frames we OCR.

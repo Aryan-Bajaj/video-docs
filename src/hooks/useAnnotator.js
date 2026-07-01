@@ -162,9 +162,11 @@ function nearestFrame(frames, timestamp) {
 
 export default function useAnnotator() {
   // ocrFrameTexts: [{timestamp, text}] from useOCR — gives the model real on-screen UI text.
+  // onDraft(docsSoFar) fires after every completed window so the UI can show
+  // steps appearing live instead of a bare progress bar.
   const annotate = useCallback(async (
     chunks, frames, aiMode, onProgress, onStatus, sections, ollamaModel, ocrFrameTexts = [],
-    shouldCancel = () => false, useVision = false, sceneCuts = [],
+    shouldCancel = () => false, useVision = false, sceneCuts = [], onDraft = null,
   ) => {
     // Build windows across the WHOLE video timeline (not just where someone spoke),
     // so silent stretches are still documented from the on-screen (OCR) text.
@@ -187,8 +189,15 @@ export default function useAnnotator() {
     // 2) Segment on SCREEN CHANGES (fixed slicing only as fallback)…
     let segments = buildSegments(ocrFrameTexts, maxT, shareStart, sceneCuts)
     // 3) …bounded by what this machine can chew through in reasonable time.
+    // The cap SCALES with video length (one window per ~45s of recording) so a
+    // 60-minute video gets proportionally more steps than a 30-minute one —
+    // detail must grow with the video, not get squeezed into a fixed budget.
+    // Low-memory machines get a lower ceiling; they trade some step granularity
+    // for actually finishing.
     const mem = navigator.deviceMemory || 8
-    segments = capSegments(segments, mem <= 4 ? 36 : 60)
+    const span = maxT - (shareStart ?? 0)
+    const wanted = Math.max(12, Math.ceil(span / 45))
+    segments = capSegments(segments, Math.min(wanted, mem <= 4 ? 48 : 96))
 
     const windows = []
     for (const [a, b] of segments) {
@@ -295,6 +304,7 @@ export default function useAnnotator() {
       }
 
       let step = parseProcedureStep(raw)
+      let fromRetry = false
       if (step.skip) {
         // Recall guard: strong evidence + a skip is more likely a model miss
         // than true noise. Strong = spoken action verbs, a text-rich screen, OR
@@ -307,10 +317,17 @@ export default function useAnnotator() {
         try {
           const raw2 = await runWindow(win, frame, label, prevText, nextText, visionLive && !!frame?.imageData, RECALL_ADDENDUM)
           step = parseProcedureStep(raw2)
+          fromRetry = true
         } catch { continue }
         if (step.skip) continue // confirmed: nothing real here
       }
       if (isLogisticsStep(step)) continue // meeting logistics / webcam-name tile → not a procedure step
+
+      // Confidence flag for the reviewer: a step the model first skipped, or one
+      // written from thin evidence (little speech AND little readable screen
+      // text), deserves a human look. Shown as a subtle marker in the UI.
+      const lowConfidence = fromRetry
+        || ((win.text || "").length < 40 && ocrLen < 40 && !(visionLive && frame?.imageData))
 
       results.push({
         timestamp: win.a,
@@ -320,8 +337,14 @@ export default function useAnnotator() {
         annotation: stepToText(step), // plain text for doc chat / RAG
         text: win.text || step.title || "",
         frame: frame?.imageData ?? null,
+        // The moment the evidence screenshot was taken — step clips/GIFs center
+        // HERE (where the action is visible), not on the window's start edge.
+        frameTimestamp: frame?.timestamp ?? win.center,
         ocrText: win.ocr || null,
+        lowConfidence,
       })
+      // Live draft: let the UI render steps as they are written.
+      onDraft?.([...results])
     }
 
     // If every window errored (wrong Ollama model, WebLLM couldn't load), surface

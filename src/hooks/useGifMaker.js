@@ -60,9 +60,16 @@ export default function useGifMaker() {
 
     for (let d = 0; d < docs.length; d++) {
       onProgress?.(d, docs.length)
-      const center = docs[d].timestamp ?? 0
-      const start = Math.max(0, center - window)
-      const end = Math.min(dur, center + window)
+      // Center the clip on the moment the step's evidence screenshot was taken
+      // (where the action is visible), and clamp it inside the step's own time
+      // window so it never bleeds into a neighbouring step's content — the GIF
+      // must show THIS step, nothing else.
+      const doc = docs[d]
+      const lo = doc.timestamp ?? 0
+      const hi = doc.endTimestamp ?? dur
+      const center = Math.min(hi, Math.max(lo, doc.frameTimestamp ?? lo))
+      const start = Math.max(0, lo, center - window)
+      const end = Math.min(dur, hi, center + window)
       const times = []
       for (let t = start; t <= end; t += 1 / fps) times.push(t)
       if (times.length < 2) { continue }
@@ -94,7 +101,8 @@ export default function useGifMaker() {
         gif.writeFrame(index, W, H, { palette, delay: f.delay })
       }
       gif.finish()
-      gifs.set(center, bytesToDataURL(gif.bytes()))
+      // Key by the step's start timestamp — that is what exports look up by.
+      gifs.set(doc.timestamp ?? center, bytesToDataURL(gif.bytes()))
     }
 
     URL.revokeObjectURL(video.src)

@@ -4,6 +4,7 @@ import { exportPDF } from "../lib/exportPDF"
 import { exportDOCX } from "../lib/exportDOCX"
 import { renderMermaidSVG, svgToPngDataURL } from "../lib/mermaidRender"
 import useClipMaker from "../hooks/useClipMaker"
+import useGifMaker from "../hooks/useGifMaker"
 import { Download } from "lucide-react"
 
 function toExportDocs(annotatedDocs, transcriptChunks) {
@@ -21,6 +22,7 @@ export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, 
   const [error, setError] = useState(null)
   const [gifMsg, setGifMsg] = useState(null)
   const { makeClips } = useClipMaker()
+  const { makeGifs } = useGifMaker()
 
   const hasContent = (annotatedDocs?.length ?? 0) + (transcriptChunks?.length ?? 0) > 0
   // Title for the guide: user-provided title preferred; never the raw video file name.
@@ -55,7 +57,19 @@ export default function ExportBar({ annotatedDocs, transcriptChunks, videoName, 
         await exportHTML(docs, name, frames, { ...meta, clips, mermaidSvg })
       }
       if (type === "pdf") await exportPDF(docs, name, meta)
-      if (type === "docx") await exportDOCX(docs, name, meta)
+      if (type === "docx") {
+        // Animated GIF per step inside the Word file (modern Word plays them;
+        // older Word shows the first frame). Compact settings keep the .docx
+        // size sane on long recordings.
+        let gifs = new Map()
+        if (videoFile && docs.length) {
+          gifs = await makeGifs(videoFile, docs,
+            (i, t) => setGifMsg(`Building step animations ${i}/${t}… (keep this tab focused)`),
+            { window: 4, fps: 4, maxW: 480, colors: 128 })
+          setGifMsg(null)
+        }
+        await exportDOCX(docs, name, { ...meta, gifs })
+      }
     } catch (e) {
       setError(`${type.toUpperCase()} export failed: ${e.message}`)
     } finally {

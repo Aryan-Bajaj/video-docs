@@ -35,6 +35,7 @@ const INITIAL_STEPS = [
 
 export default function App() {
   const [videoFile, setVideoFile] = useState(null)
+  const [videoDuration, setVideoDuration] = useState(0) // seconds; drives the upfront time estimate
   const [frames, setFrames] = useState([])
   const [activeFrame, setActiveFrame] = useState(null)
   const [seekTo, setSeekTo] = useState(null)
@@ -104,6 +105,18 @@ export default function App() {
     setDocTitle("")
     setInsights(null)
     setVideoFile(file)
+    // Duration from metadata only (instant, no decode) — powers the upfront
+    // "this will take about X minutes" estimate in the AI settings dialog.
+    setVideoDuration(0)
+    try {
+      const v = document.createElement("video")
+      v.preload = "metadata"
+      v.onloadedmetadata = () => {
+        if (isFinite(v.duration)) setVideoDuration(v.duration)
+        URL.revokeObjectURL(v.src)
+      }
+      v.src = URL.createObjectURL(file)
+    } catch { /* estimate simply not shown */ }
     setPipelineSteps(INITIAL_STEPS.map((s, i) =>
       i === 0 ? { ...s, status: 'active', startedAt: Date.now() } : s
     ))
@@ -225,6 +238,9 @@ export default function App() {
         () => cancelRef.current,
         useVision,
         sceneCuts,
+        // Live drafts: steps appear in the panel as they are written, so the
+        // user watches the document grow instead of staring at a progress bar.
+        (draft) => setAnnotatedDocs(draft),
       )
       if (cancelRef.current) {
         setAnnotatedDocs(docs)
@@ -391,6 +407,7 @@ export default function App() {
           onClose={() => setShowAISettings(false)}
           suggestedSections={docSections}
           toolsUsed={toolsUsed}
+          videoDuration={videoDuration}
         />
       )}
 

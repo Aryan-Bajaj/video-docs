@@ -87,13 +87,20 @@ export default function useClipMaker() {
 
     for (let d = 0; d < docs.length; d++) {
       onProgress?.(d, docs.length)
-      const center = docs[d].timestamp ?? 0
-      const start = Math.max(0, center - pad)
-      const end = Math.min(dur, center + pad)
+      // Center the clip on the moment the step's evidence screenshot was taken
+      // (the action itself), clamped inside the step's own time window so it
+      // never shows a neighbouring step's content. Keyed by the step's start
+      // timestamp — that is what exports look up by.
+      const doc = docs[d]
+      const lo = doc.timestamp ?? 0
+      const hi = doc.endTimestamp ?? dur
+      const center = Math.min(hi, Math.max(lo, doc.frameTimestamp ?? lo))
+      const start = Math.max(0, lo, center - pad)
+      const end = Math.min(dur, hi, center + pad)
       if (end - start < 1) continue
       try {
         const blob = await recordRange(video, canvas, ctx, start, end, fps, mime, seek)
-        if (blob && blob.size) clips.set(center, await blobToDataURL(blob))
+        if (blob && blob.size) clips.set(doc.timestamp ?? center, await blobToDataURL(blob))
       } catch { /* skip this clip */ }
     }
 

@@ -107,19 +107,21 @@ export async function exportHTML(docs, videoName, allFrames, meta = {}) {
     const clipFrames = getClipFrames(allFrames, doc.timestamp, 15)
     const stepBlock = buildStepBlock(doc)
     const stepTitle = doc.step?.title || captionFromTranscript(doc.text || '') || `Step ${i + 1}`
-    const caption = captionFromTranscript(doc.text || '')
     const clip = clips.get(doc.timestamp)
     const gif = gifs.get(doc.timestamp)
 
     // Prefer a sharp WebM clip; fall back to GIF, then a frame slideshow.
+    // No transcript caption under the media: a raw spoken fragment ("So, things
+    // first. I would just...") reads as noise in a professional document — the
+    // step's written actions next to it carry the real content.
     const mediaHtml = clip
-      ? `<figure class="seg-media"><video src="${clip}" autoplay muted loop playsinline style="width:100%;height:auto;display:block;max-height:420px;object-fit:contain;border-radius:8px"></video>${caption ? `<figcaption class="seg-caption">${esc(caption)}</figcaption>` : ''}</figure>`
+      ? `<figure class="seg-media"><video src="${clip}" autoplay muted loop playsinline style="width:100%;height:auto;display:block;max-height:420px;object-fit:contain;border-radius:8px"></video></figure>`
       : gif
-      ? `<figure class="seg-media"><img src="${gif}" alt="${esc(stepTitle)}" style="width:100%;height:auto;display:block;max-height:420px;object-fit:contain;border-radius:8px">${caption ? `<figcaption class="seg-caption">${esc(caption)}</figcaption>` : ''}</figure>`
+      ? `<figure class="seg-media"><img src="${gif}" alt="${esc(stepTitle)}" style="width:100%;height:auto;display:block;max-height:420px;object-fit:contain;border-radius:8px"></figure>`
       : clipFrames.length > 1
-        ? buildAnimatedMedia(clipFrames, i, caption)
+        ? buildAnimatedMedia(clipFrames, i, '')
         : clipFrames.length === 1
-          ? buildStaticMedia(clipFrames[0], stepTitle, caption)
+          ? buildStaticMedia(clipFrames[0], stepTitle, '')
           : `<div class="seg-no-frame"><span>${esc(stepTitle)}</span></div>`
 
     return `
@@ -546,7 +548,7 @@ ${transcriptHtml}
 function buildStaticMedia(imageData, label, caption) {
   return `<div class="media-wrap">
     <img src="${imageData}" alt="${esc(label)}">
-    <div class="media-caption">${esc(caption)}</div>
+    ${caption ? `<div class="media-caption">${esc(caption)}</div>` : ''}
   </div>`
 }
 
@@ -566,6 +568,6 @@ function buildAnimatedMedia(frames, index, caption) {
   return `<style>@keyframes ${keyframeName}{0%,${pct}%{opacity:1}${+(pct+0.01).toFixed(3)}%,100%{opacity:0}}</style>
   <div class="anim-wrap" style="min-height:200px">
     ${frameImgs}
-    <div class="media-caption" style="position:absolute;bottom:0;left:0;right:0;z-index:2">${esc(caption)}</div>
+    ${caption ? `<div class="media-caption" style="position:absolute;bottom:0;left:0;right:0;z-index:2">${esc(caption)}</div>` : ''}
   </div>`
 }
